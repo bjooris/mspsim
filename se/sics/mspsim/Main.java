@@ -84,6 +84,9 @@ public class Main {
       if ("cc430".equals(platform)) {
           return "se.sics.mspsim.platform.ti.CC430Node";
       }
+      if ("rm090".equals(platform)) {
+          return "se.sics.mspsim.platform.rm090.RM090Node";
+      }
       // Try to guess the node type.
       return "se.sics.mspsim.platform." + platform + '.'
           + Character.toUpperCase(platform.charAt(0))

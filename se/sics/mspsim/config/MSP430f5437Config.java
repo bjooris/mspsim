@@ -37,9 +37,13 @@ package se.sics.mspsim.config;
 
 import java.util.ArrayList;
 import se.sics.mspsim.core.ClockSystem;
+import se.sics.mspsim.core.DMAxv2;
 import se.sics.mspsim.core.GenericUSCI;
+import static se.sics.mspsim.core.GenericUSCI.RXIFG;
+import se.sics.mspsim.core.USCI;
 import se.sics.mspsim.core.IOPort;
 import se.sics.mspsim.core.IOUnit;
+import se.sics.mspsim.core.InterruptMultiplexer;
 import se.sics.mspsim.core.MSP430Config;
 import se.sics.mspsim.core.MSP430Core;
 import se.sics.mspsim.core.Multiplier32;
@@ -55,7 +59,7 @@ public class MSP430f5437Config extends MSP430Config {
     // - positions of all timers (A0, A1, B)
     // - memory configuration
     // - 
-    private static final String portConfig[] = {
+    public static final String portConfig[] = {
             "P1=200,IN 00,OUT 02,DIR 04,REN 06,DS 08,SEL 0A,IV_L 0E,IV_H 0F,IES 18,IE 1A,IFG 1C",
             "P2=200,IN 01,OUT 03,DIR 05,REN 07,DS 09,SEL 0B,IV_L 1E,IV_H 1F,IES 19,IE 1B,IFG 1D",
             "P3=220,IN 00,OUT 02,DIR 04,REN 06,DS 08,SEL 0A",
@@ -84,16 +88,16 @@ public class MSP430f5437Config extends MSP430Config {
         timerConfig = new TimerConfig[] {timerA0, timerA1, timerB0};
         
         uartConfig = new UARTConfig[] {
-                new UARTConfig("USCI A0", 57, 0x5c0),
-                new UARTConfig("USCI B0", 56, 0x5e0),
-                new UARTConfig("USCI A1", 46, 0x600),
-                new UARTConfig("USCI B1", 45, 0x620),
-                new UARTConfig("USCI A2", 52, 0x640),
-                new UARTConfig("USCI B2", 51, 0x660),
-                new UARTConfig("USCI A3", 44, 0x680),
-                new UARTConfig("USCI B3", 43, 0x6a0)
+                new UARTConfig("USCIA0", 57, 0x5c0),
+                new UARTConfig("USCIB0", 56, 0x5e0),
+                new UARTConfig("USCIA1", 46, 0x600),
+                new UARTConfig("USCIB1", 45, 0x620),
+                new UARTConfig("USCIA2", 52, 0x640),
+                new UARTConfig("USCIB2", 51, 0x660),
+                new UARTConfig("USCIA3", 44, 0x680),
+                new UARTConfig("USCIB3", 43, 0x6a0)
         };
-
+        
         /* configure memory */
         infoMemConfig(0x1800, 128 * 4);
         mainFlashConfig(0x5c00, 256 * 1024);
@@ -125,15 +129,31 @@ public class MSP430f5437Config extends MSP430Config {
             ioUnits.add(last = IOPort.parseIOPort(cpu, 0, portConfig[i], last));
         }
 
-		/* XXX: Stub IO units: Sysreg and PMM */
-		SysReg sysreg = new SysReg(cpu, cpu.memory);
-		cpu.setIORange(SysReg.ADDRESS, SysReg.SIZE, sysreg);
-		ioUnits.add(sysreg);
+        /* XXX: Stub IO units: Sysreg and PMM */
+        SysReg sysreg = new SysReg(cpu, cpu.memory);
+        cpu.setIORange(SysReg.ADDRESS, SysReg.SIZE, sysreg);
+        ioUnits.add(sysreg);
 
-		PMM pmm = new PMM(cpu, cpu.memory, 0x120);
-		cpu.setIORange(0x120, PMM.SIZE, pmm);
-		ioUnits.add(pmm);
+        PMM pmm = new PMM(cpu, cpu.memory, 0x120);
+        cpu.setIORange(0x120, PMM.SIZE, pmm);
+        ioUnits.add(pmm);
 
+        
+        DMAxv2 dma = new DMAxv2("dma", cpu, cpu.memory, 0x500, 50);
+        cpu.setIORange(0x500, 0x40, dma);
+
+        /* configure the DMA */
+        dma.setDMATrigger(DMAxv2.USCIA0RX, (GenericUSCI)(cpu.getIOUnit("USCIA0")), GenericUSCI.RXIFG);
+        dma.setDMATrigger(DMAxv2.USCIA0TX, (GenericUSCI)(cpu.getIOUnit("USCIA0")), GenericUSCI.TXIFG);
+        dma.setDMATrigger(DMAxv2.USCIA1RX, (GenericUSCI)(cpu.getIOUnit("USCIA1")), GenericUSCI.RXIFG);
+        dma.setDMATrigger(DMAxv2.USCIA1TX, (GenericUSCI)(cpu.getIOUnit("USCIA1")), GenericUSCI.TXIFG);
+        dma.setDMATrigger(DMAxv2.USCIB0RX, (GenericUSCI)(cpu.getIOUnit("USCIB0")), GenericUSCI.RXIFG);
+        dma.setDMATrigger(DMAxv2.USCIB0TX, (GenericUSCI)(cpu.getIOUnit("USCIB0")), GenericUSCI.TXIFG);
+        dma.setDMATrigger(DMAxv2.USCIB1RX, (GenericUSCI)(cpu.getIOUnit("USCIB1")), GenericUSCI.RXIFG);
+        dma.setDMATrigger(DMAxv2.USCIB1TX, (GenericUSCI)(cpu.getIOUnit("USCIB1")), GenericUSCI.TXIFG);
+        //dma.setInterruptMultiplexer(new InterruptMultiplexer(cpu, 50));
+        ioUnits.add(dma);        
+        
         return portConfig.length + uartConfig.length;
     }
 

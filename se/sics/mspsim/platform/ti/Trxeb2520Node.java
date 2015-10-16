@@ -79,10 +79,10 @@ public class Trxeb2520Node extends GenericNode implements PortListener, USARTLis
 		IOUnit usart0 = cpu.getIOUnit("USCI B0"); 
 		if (usart0 instanceof USARTSource) {
 			radio = new CC2520(cpu); 
-			radio.setGPIO(0, port1, CC2520_FIFOP);
-			radio.setGPIO(1, port3, CC2520_FIFO);
-			radio.setGPIO(3, port1, CC2520_CCA);
-			radio.setGPIO(4, port1, CC2520_SFD);
+			radio.configGPIO(0, port1, CC2520_FIFOP);
+			radio.configGPIO(1, port3, CC2520_FIFO);
+			radio.configGPIO(3, port1, CC2520_CCA);
+			radio.configGPIO(4, port1, CC2520_SFD);
 			((USARTSource) usart0).addUSARTListener(this);
 		} else {
 			throw new EmulationException("Error creating Trxeb2520Node: no USCI B0");

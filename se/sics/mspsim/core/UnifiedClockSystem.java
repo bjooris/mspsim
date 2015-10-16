@@ -288,8 +288,8 @@ public class UnifiedClockSystem extends ClockSystem {
 //  private static final int RESERVED            = 0x8000;    /* RESERVED */
 
 
-  private static final int ACLK_FRQ = 32768;
-  private static final int MAX_DCO_FRQ = 16000000;
+  public static int ACLK_FRQ = 32768;
+  private static final int MAX_DCO_FRQ = 25000000;
 
   private final Timer[] timers;
 
@@ -381,7 +381,7 @@ public class UnifiedClockSystem extends ClockSystem {
 
     if (newDcoFrequency != currentDcoFrequency) {
       currentDcoFrequency = newDcoFrequency;
-      cpu.setDCOFrq(currentDcoFrequency, currentDcoFrequency / (1 << divSMclk));
+      cpu.setDCOFrq((dcoLoopDivider + 1) * currentDcoFrequency, currentDcoFrequency / (1 << divSMclk));
 
       if (timers != null) {
 	  for(int i = 0; i < timers.length; i++) {

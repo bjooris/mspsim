@@ -119,9 +119,11 @@ public class MiscCommands implements CommandBundle {
             }
         }
         startTime = System.currentTimeMillis() - (long)cpu.getTimeMillis();
+        //System.err.println("public int executeCommand(CommandContext context) {" + startTime);
         return 0;
       }
       public void lineRead(String line) {
+          System.err.println("public void lineRead(String line) {");
           if (useCycles) {
               out.println(Long.toString(cpu.cycles) + ' ' + line);
           } else {

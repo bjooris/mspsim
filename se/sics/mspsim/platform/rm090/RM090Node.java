@@ -37,6 +37,7 @@
 
 package se.sics.mspsim.platform.rm090;
 import java.io.IOException;
+import java.util.ArrayList;
 import se.sics.mspsim.chip.Button;
 import se.sics.mspsim.chip.CC2520;
 import se.sics.mspsim.chip.Leds;
@@ -47,43 +48,183 @@ import se.sics.mspsim.core.IOUnit;
 import se.sics.mspsim.core.PortListener;
 import se.sics.mspsim.core.USARTListener;
 import se.sics.mspsim.core.USARTSource;
+import se.sics.mspsim.core.UnifiedClockSystem;
 import se.sics.mspsim.platform.GenericNode;
 import se.sics.mspsim.ui.SerialMon;
 import se.sics.mspsim.util.ArgumentManager;
 
 public class RM090Node extends GenericNode implements PortListener, USARTListener {
-    /* RM090 specific note: interface between MSP430 and CC2520 seems to be identical to the wismote */
-    /* P1.6 - Input: FIFOP from CC2520 */
-    /* P1.5 - Input: FIFO from CC2520 */
-    /* P1.7 - Input: CCA from CC2520 */
-    public static final int CC2520_FIFOP = 6;
-    public static final int CC2520_FIFO = 5;
-    public static final int CC2520_CCA = 7;
-    /* P2.0 - Input: SFD from CC2520 */
-    public static final int CC2520_SFD = 0;
-    /* P2.1 - Input: GPIO5 from CC2520 */
-    public static final int CC2520_TX_ACTIVE = 1;
-    /* P3.0 - Output: SPI Chip Select (CS_N) */
-    public static final int CC2520_CHIP_SELECT = 0x01;
-    /* P4.3 - Output: VREG_EN to CC2520 */
-    public static final int CC2520_VREG = 1 << 3;
-    /* P4.4 - Output: RESET_N to CC2520 */
-    public static final int CC2520_RESET = 1 << 4;
+
+   @SuppressWarnings("unchecked")
+   ArrayList<Pin>[] nodePorts = (ArrayList<Pin>[])new ArrayList[11];
+   
+   private StringBuilder ledString = new StringBuilder("rgb");
+   private boolean ledChanged = false;
+
+   abstract public class Pin {
+        public  int portId;
+        public  int pinId;
+        public  int pinMask;
+        public boolean state;
+        abstract public void evaluate(int data);
+        public boolean checkIfStateChanged(int data) {
+            boolean newState = ((data & pinMask) != 0);
+            boolean result = (newState != state);
+            state = newState;
+            return result;            
+        }
+        
+        Pin(int portId, int pinId, boolean state) {
+            this.portId= portId;
+            this.pinId = pinId;
+            this.pinMask = 1 << pinId;
+            this.state = state;
+            if (nodePorts[portId] == null) {
+                nodePorts[portId] = new ArrayList<Pin>();
+            }
+            nodePorts[portId].add(this);
+        }
+    }
+    private abstract class CC2520_GPIO extends Pin {
+        public  int gpioId;
+        CC2520_GPIO(int gpioId, int portId, int pinId, boolean state) {
+            super(portId, pinId, state);
+            this.gpioId = gpioId;
+        }
+        
+        public void register2Radio() {
+            radio.configGPIO(gpioId, cpu.getIOUnit(IOPort.class, "P"+portId), pinId);
+        }
+    }
+        
+    private CC2520_GPIO CC2520_GPIO0 = new CC2520_GPIO(0, 1, 4, false) {
+        @Override
+        public void evaluate(int data) {
+            if (super.checkIfStateChanged(data)) {
+                radio.setGPIO(0, state);
+            }
+        }
+    };
+
+    private CC2520_GPIO CC2520_GPIO1 = new CC2520_GPIO(1, 1, 5, false) {
+        @Override
+        public void evaluate(int data) {
+            if (super.checkIfStateChanged(data)) {
+                radio.setGPIO(1, state);
+            }
+        }
+    };
+
+    private CC2520_GPIO CC2520_GPIO2 = new CC2520_GPIO(2, 1, 6, false) {
+        @Override
+        public void evaluate(int data) {
+            if (super.checkIfStateChanged(data)) {
+                radio.setGPIO(2, state);
+            }
+        }
+    };
+    
+    private CC2520_GPIO CC2520_GPIO3 = new CC2520_GPIO(3, 1, 7, false) {
+        @Override
+        public void evaluate(int data) {
+            if (super.checkIfStateChanged(data)) {
+                radio.setGPIO(3, state);
+            }
+        }
+    };
+    
+    private CC2520_GPIO CC2520_GPIO4 = new CC2520_GPIO(4, 2, 0, false) {
+        @Override
+        public void evaluate(int data) {
+            if (super.checkIfStateChanged(data)) {
+                radio.setGPIO(4, state);
+            }
+        }
+    };
+
+    private CC2520_GPIO CC2520_GPIO5 = new CC2520_GPIO(5, 2, 1, false) {
+        @Override
+        public void evaluate(int data) {
+            if (super.checkIfStateChanged(data)) {
+                radio.setGPIO(5, state);
+            }
+        }
+    };
+    
+    private Pin CC2520_RESET = new Pin(2, 4, false) {
+        @Override
+        public void evaluate(int data) {
+            if (super.checkIfStateChanged(~data)) {
+                radio.setResetPin(state);
+            }
+        }
+    };
+    
+    private Pin CC2520_VREG = new Pin(2, 5, false) {
+        @Override
+        public void evaluate(int data) {
+            if (super.checkIfStateChanged(data)) {
+                //System.out.println("CC2520_VREG init from data " + data + " m" + pinMask);
+                radio.setVRegOn(state);
+            }
+        }
+    };
+    
+    private Pin CC2520_CS = new Pin(3, 0, false) /*active low */{
+        @Override
+        public void evaluate(int data) {
+            if (super.checkIfStateChanged(~data)) {
+                radio.setChipSelect(state);
+            }
+        }
+    };
+    
+    private Pin LED0 = new Pin(8, 2, false) {
+        @Override
+        public void evaluate(int data) {
+            if (super.checkIfStateChanged(data)) {
+                leds.setLeds(LEDS_RED, state);
+                ledString.setCharAt(0, (state?'R':'r'));
+                ledChanged = true;
+            }
+        }
+    };
+    
+    private Pin LED1 = new Pin(8, 3, false) {
+        @Override
+        public void evaluate(int data) {
+            if (super.checkIfStateChanged(data)) {
+                leds.setLeds(LEDS_GREEN, state);
+                ledString.setCharAt(1, (state?'G':'g'));
+                ledChanged = true;
+            }
+        }
+    };
+    
+    private Pin LED2 = new Pin(8, 4, false) {
+        @Override
+        public void evaluate(int data) {
+            if (super.checkIfStateChanged(data)) {
+                leds.setLeds(LEDS_BLUE, state);
+                ledString.setCharAt(2, (state?'B':'b'));
+                ledChanged = true;
+            }
+        }
+    };
 
     /* RM090 specific note: button also on P2.7 as in wismote */
-    /* P2.7 - Button */
-    public static final int BUTTON_PIN = 7;
+    /* P2.7 - Button 1*/
+    public static final int BUTTON1_PIN = 7;
+    /* P2.6 - Button 2*/
+    public static final int BUTTON2_PIN = 6;
 
     /* RM090 specific note: leds on different ports and pins than wismote */
     /* P8.2 - Red (left?) led */
-    private static final int LEDS_CONF_RED   = 1 << 2;
-    private static final int LEDS_RED        = 1 << 2; // TODO: is this just and identifier?
+    private static final int LEDS_RED        = 1 << 0; // TODO: is this just and identifier?
     /* P8.3 - Green (middle?) led */
-    private static final int LEDS_CONF_GREEN  = 1 << 3;
     private static final int LEDS_GREEN       = 1 << 1; 
     /* P8.4 - Blue (right?) led */
-    private static final int LEDS_CONF_BLUE   = 1 << 4;
-    private static final int LEDS_BLUE        = 1 << 0;
+    private static final int LEDS_BLUE        = 1 << 2;
 
     /* This array apparently contains the colour encodings of the leds, the values are RGB values... */
     private static final int[] LEDS = { 0xff2020, 0x20ff20, 0x2020ff }; 
@@ -97,6 +238,13 @@ public class RM090Node extends GenericNode implements PortListener, USARTListene
 
     public RM090Node() {
         super("RM090mote", new MSP430f5437Config());
+        cpu.aclkFrq = 32000;
+        UnifiedClockSystem unit = cpu.getIOUnit(UnifiedClockSystem.class, "UnifiedClockSystem");
+        if ((unit != null) && (unit instanceof UnifiedClockSystem)) {
+            ((UnifiedClockSystem)unit).ACLK_FRQ = 32000;
+        }
+
+        
     }
 
     public Leds getLeds() {
@@ -126,24 +274,13 @@ public class RM090Node extends GenericNode implements PortListener, USARTListene
     }
 
     public void portWrite(IOPort source, int data) {
-        switch (source.getPort()) {
-            case 3: /* RM090 vs wismode: CC2520 pins layout identical */
-                // Chip select = active low...
-                radio.setChipSelect((data & CC2520_CHIP_SELECT) == 0);
-                break;
-            case 4: /* RM090 vs wismode: CC2520 pins layout identical */
-                //radio.portWrite(source, data);
-                //flash.portWrite(source, data);
-                radio.setVRegOn((data & CC2520_VREG) != 0);
-                break;
-            case 8: /* RM090 vs wismode: all LEDs are on port 8 */
-                System.out.println("LEDS RED = " + ((data & LEDS_CONF_RED) > 0));
-                leds.setLeds(LEDS_RED, (data & LEDS_CONF_RED) == 0 && (source.getDirection() & LEDS_CONF_RED) != 0);
-                System.out.println("LEDS GREEN = " + ((data & LEDS_CONF_GREEN) > 0));
-                leds.setLeds(LEDS_GREEN, (data & LEDS_CONF_GREEN) == 0 && (source.getDirection() & LEDS_CONF_GREEN) != 0);
-                System.out.println("LEDS BLUE = " + ((data & LEDS_CONF_BLUE) > 0));
-                leds.setLeds(LEDS_BLUE, (data & LEDS_CONF_BLUE) == 0 && (source.getDirection() & LEDS_CONF_BLUE) != 0);
-                break;
+        //System.out.println("P" + source.getPort() + ": = " + data + " " + source.getOut());
+        for(Pin pin : nodePorts[source.getPort()]) {
+            pin.evaluate(source.getOut());
+        }
+        if (ledChanged) {
+            if (DEBUG) log("Leds = " + ledString + " @ " + cpu.getTimeMillis());
+            ledChanged = false;
         }
     }
 
@@ -151,7 +288,18 @@ public class RM090Node extends GenericNode implements PortListener, USARTListene
 //        if (flashFile != null) {
 //            setFlash(new FileM25P80(cpu, flashFile));
 //        }
-
+        ArrayList<Pin> portPins;
+        
+        for(int i=0; i < nodePorts.length; i++) {
+            portPins = nodePorts[i];
+            if (portPins != null && !portPins.isEmpty()) {
+                //System.out.println("Port " + i + "has some pins registered");
+                IOPort port = cpu.getIOUnit(IOPort.class, "P"+i);
+                port.addPortListener(this);
+            }
+        }
+        
+        /*
         IOPort port1 = cpu.getIOUnit(IOPort.class, "P1");
         port1.addPortListener(this);
         IOPort port2 = cpu.getIOUnit(IOPort.class, "P2");
@@ -160,30 +308,31 @@ public class RM090Node extends GenericNode implements PortListener, USARTListene
         cpu.getIOUnit(IOPort.class, "P4").addPortListener(this);
         //cpu.getIOUnit(IOPort.class, "P5").addPortListener(this); // RM090: not necessary for RM090
         cpu.getIOUnit(IOPort.class, "P8").addPortListener(this);
-
-        IOUnit usart0 = cpu.getIOUnit("USCI B0");
+           */
+        IOUnit usart0 = cpu.getIOUnit("USCIB0");
         if (usart0 instanceof USARTSource) { /* RM090: again, CC2520 pin layout is identical to wismote */
-
             radio = new CC2520(cpu);
-            radio.setGPIO(1, port1, CC2520_FIFO);
-            radio.setGPIO(3, port1, CC2520_CCA);
-            radio.setGPIO(2, port1, CC2520_FIFOP);
-            radio.setGPIO(4, port2, CC2520_SFD);
-	    radio.setGPIO(5, port2, CC2520_TX_ACTIVE);
-
+            CC2520_GPIO0.register2Radio();
+            CC2520_GPIO1.register2Radio();
+            CC2520_GPIO2.register2Radio();
+            CC2520_GPIO3.register2Radio();
+            CC2520_GPIO4.register2Radio();
+            CC2520_GPIO5.register2Radio();
+            radio.setSOConfig(cpu.getIOUnit(IOPort.class, "P3"), 2);
             ((USARTSource) usart0).addUSARTListener(this);
         } else {
-            throw new EmulationException("Could not setup rm090 mote - missing USCI B0");
+            throw new EmulationException("Could not setup rm090 mote - missing USCIB0");
         }
         leds = new Leds(cpu, LEDS);
-        button = new Button("Button", cpu, port2, BUTTON_PIN, true);
+        button = new Button("Button1", cpu, cpu.getIOUnit(IOPort.class, "P2"), 7, true);
+        //button = new Button("Button2", cpu, port2, 6, true);
 
         /* RM090: TODO: serial port for RM090, will it work? */
-        IOUnit usart = cpu.getIOUnit("USCI A1");
+        IOUnit usart = cpu.getIOUnit("USCIA1");
         if (usart instanceof USARTSource) {
             registry.registerComponent("serialio", usart);
         } else {
-            throw new EmulationException("Could not setup rm090 mote - missing USCI A1");
+            throw new EmulationException("Could not setup rm090 mote - missing USCIA1");
         }
     }
 

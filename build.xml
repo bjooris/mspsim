@@ -102,6 +102,22 @@
     </java>
   </target>
 
+  <target name="runRM090" depends="jar" description="run MSPSim with platform RM090">
+    <property name="FIRMWAREFILE" value="/tmp/example-ping6.rm090"/>
+    <java fork="true" classpath="${jarfile}" classname="se.sics.mspsim.platform.rm090.RM090Node">
+      <arg value="${FIRMWAREFILE}"/>
+      <arg line="${ARGS}"/>
+    </java>
+  </target>
+
+  <target name="runRM0901" depends="jar" description="run MSPSim with platform RM090">
+    <property name="FIRMWAREFILE" value="/tmp/test.rm090"/>
+    <java fork="true" classpath="${jarfile}" classname="se.sics.mspsim.platform.rm090.RM090Node">
+      <arg value="${FIRMWAREFILE}"/>
+      <arg line="${ARGS}"/>
+    </java>
+  </target>
+
   <target name="run" depends="jar" description="run MSPSim">
     <property name="FIRMWAREFILE" value="firmware/sky/blink.sky"/>
     <java fork="true" classpath="${jarfile}" classname="se.sics.mspsim.Main">
@@ -109,6 +125,8 @@
       <arg line="${ARGS}"/>
     </java>
   </target>
+
+
 
   <target name="cputest" depends="jar" description="run MSPSim CPU test">
     <property name="FIRMWAREFILE" value="tests/cputest.sky"/>

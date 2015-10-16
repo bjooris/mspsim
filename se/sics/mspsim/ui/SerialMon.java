@@ -50,6 +50,7 @@ import javax.swing.JPopupMenu;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 import javax.swing.JTextField;
+import se.sics.mspsim.core.Loggable;
 
 import se.sics.mspsim.core.StateChangeListener;
 import se.sics.mspsim.core.USARTListener;
@@ -211,6 +212,7 @@ public class SerialMon implements USARTListener, StateChangeListener, ServiceCom
 
   public void dataReceived(USARTSource source, int data) {
     if (data == '\n') {
+      System.out.println(text.substring(text.lastIndexOf("\n")+1));
       if (lines >= MAX_LINES) {
 	int index = text.indexOf('\n');
 	text = text.substring(index + 1);
@@ -289,4 +291,5 @@ public class SerialMon implements USARTListener, StateChangeListener, ServiceCom
       });
     }
   }
+
 }

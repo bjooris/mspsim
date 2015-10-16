@@ -109,7 +109,7 @@ public class MSP430Core extends Chip implements MSP430Constants {
 
   // Not private since they are needed (for fast access...)
   public int dcoFrq = 2500000;
-  int aclkFrq = 32768;
+  public int aclkFrq = 32768;
   public int smclkFrq = dcoFrq;
 
   long lastCyclesTime = 0;
@@ -481,7 +481,7 @@ public class MSP430Core extends Chip implements MSP430Constants {
       boolean oldCpuOff = cpuOff;
       if (debugInterrupts) {
           if (((value & GIE) == GIE) != interruptsEnabled) {
-              System.out.println("InterruptEnabled changed: " + !interruptsEnabled);
+              System.out.println("InterruptEnabled changed: " + !interruptsEnabled + " PC: $" + getAddressAsString(reg[PC]));
           }
       }
       boolean oldIE = interruptsEnabled;
@@ -940,9 +940,9 @@ public class MSP430Core extends Chip implements MSP430Constants {
 
     if (debugInterrupts) {
       System.out.println("### Executing interrupt: " +
-			 servicedInterrupt + " at "
-			 + pcBefore + " to " + pc +
-			 " SP before: " + spBefore +
+			 servicedInterrupt + " at 0x"
+			 + Utils.hex(pcBefore,5) + " to 0x" + Utils.hex(pc,5) +
+			 " SP before: 0x" + Utils.hex(spBefore,5) +
 			 " Vector: " + Utils.hex16(0xfffe - (MAX_INTERRUPT - servicedInterrupt) * 2));
     }
     
@@ -2235,7 +2235,7 @@ public class MSP430Core extends Chip implements MSP430Constants {
   public String info() {
       StringBuilder buf = new StringBuilder();
       buf.append(" Mode: " + getModeName(getMode())
-              + "  ACLK: " + aclkFrq + " Hz  SMCLK: " + smclkFrq + " Hz\n"
+              + "  ACLK: " + aclkFrq + " Hz  SMCLK: " + smclkFrq + " Hz MCLK: " + dcoFrq + " Hz   \n"
               + " Cycles: " + cycles + "  CPU Cycles: " + cpuCycles
               + "  Time: " + (long)getTimeMillis() + " msec\n");
       buf.append(" Interrupt enabled: " + interruptsEnabled +  " HighestInterrupt: " + interruptMax);

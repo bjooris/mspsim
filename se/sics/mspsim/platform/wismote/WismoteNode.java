@@ -172,10 +172,10 @@ public class WismoteNode extends GenericNode implements PortListener, USARTListe
         if (usart0 instanceof USARTSource) {
 
             radio = new CC2520(cpu);
-            radio.setGPIO(1, port1, CC2520_FIFO);
-            radio.setGPIO(3, port1, CC2520_CCA);
-            radio.setGPIO(2, port1, CC2520_FIFOP);
-            radio.setGPIO(4, port2, CC2520_SFD);
+            radio.configGPIO(1, port1, CC2520_FIFO);
+            radio.configGPIO(3, port1, CC2520_CCA);
+            radio.configGPIO(2, port1, CC2520_FIFOP);
+            radio.configGPIO(4, port2, CC2520_SFD);
 
             ((USARTSource) usart0).addUSARTListener(this);
         } else {

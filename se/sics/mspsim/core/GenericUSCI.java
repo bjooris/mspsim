@@ -3,6 +3,7 @@ package se.sics.mspsim.core;
 import java.util.ArrayDeque;
 
 import se.sics.mspsim.chip.I2CUnit.I2CData;
+import se.sics.mspsim.util.Utils;
 
 
 /** 
@@ -11,7 +12,7 @@ import se.sics.mspsim.chip.I2CUnit.I2CData;
  * @author Unknown
  * @author Víctor Ariño <victor.arino@tado.com>
  */
-public class GenericUSCI extends IOUnit implements DMATrigger, USARTSource {
+public class GenericUSCI extends IOUnit implements DMAxv2Trigger, USARTSource {
 
     // USCI A/Bx common register offset
     public static final int CTL0 = 1; /* Is this really correct??? */
@@ -41,12 +42,14 @@ public class GenericUSCI extends IOUnit implements DMATrigger, USARTSource {
     public static final int SWRST = 0x01;
     
     private USARTListener usartListener;
+    private DMAxv2 dma;
+
 
     private int ubr0;
     private int ubr1;
 
     protected int ie;
-    protected int ifg;
+    protected int ifg = TXIFG;
     protected int iv = 2; /* TODO Implement me! */
 
     private int clockSource = 0;
@@ -126,17 +129,19 @@ public class GenericUSCI extends IOUnit implements DMATrigger, USARTSource {
     }
     
     protected void setBitIFG(int bits) {
-        ifg |= bits;
 
-        // TODO: implement DMA... 
-        //        if (dma != null) {
-        //            /* set bit first, then trigger DMA transfer - this should
-        //             * be made via a 1 cycle or so delayed action */
-        //            if ((bits & urxifg) > 0) dma.trigger(this, 0);
-        //            if ((bits & utxifg) > 0) dma.trigger(this, 1);
-        //        }
-        updateIV();
-        if ((ifg & ie) > 0) cpu.flagInterrupt(vector, this, true);
+        ifg |= bits;
+        if (dma != null) {
+            /* set bit first, then trigger DMA transfer - this should
+             * be made via a 1 cycle or so delayed action */
+            //System.err.println("setBitIFG "+ (bits==RXIFG?"RXIFG":"TXIFG"));
+            if ((bits & RXIFG) > 0) dma.trigger(this, RXIFG);
+            if ((bits & TXIFG) > 0) dma.trigger(this, TXIFG);
+        }
+        else {
+            updateIV();
+            if ((ifg & ie) > 0) cpu.flagInterrupt(vector, this, true);
+        }
     }
 
     protected void clrBitIFG(int bits) {
@@ -196,7 +201,7 @@ public class GenericUSCI extends IOUnit implements DMATrigger, USARTSource {
             if (isIEBitsSet(TXIFG)) {
                 log(" flagging on transmit interrupt");
             }
-            log(" Ready to transmit next at: " + cycles);
+            log(" Ready to transmit next AT: " + cycles);
         }
     }
 
@@ -309,7 +314,7 @@ public class GenericUSCI extends IOUnit implements DMATrigger, USARTSource {
           ie = data;
         break;
       case TXBUF:
-        if (DEBUG) log(": USART_UTXBUF:" + (char) data + " = " + data + "\n");
+        if (DEBUG) log(": USART_UTXBUF:" + (data>=32?(char) data:'.') + " = 0x" + Utils.hex(data,2 ) + "\n");
         if (moduleEnabled) {
           // Interruptflag not set!
           clrBitIFG(TXIFG);
@@ -444,14 +449,33 @@ public class GenericUSCI extends IOUnit implements DMATrigger, USARTSource {
     }
 
     /* TODO: IMPLEMENT DMA! */
-    public void setDMA(DMA dma) {
+    public void setDMA(DMAxv2 dma) {
+      this.dma = dma;        
     }
 
     public boolean getDMATriggerState(int index) {
-        return false;
+      log("getDMATriggerState: " + index);
+      if (index == RXIFG) {
+          return (getIFG() & RXIFG) > 0;
+      }
+      if (index == TXIFG) {
+          return (getIFG() & TXIFG) > 0;
+      }
+      log("UNEXPECTED getDMATriggerState: " + index);
+      return false;
     }
 
     public void clearDMATrigger(int index) {
+      if (index == RXIFG) {
+          clrBitIFG(RXIFG);
+          stateChanged(USARTListener.RXFLAG_CLEARED, true);
+          return;
+      }
+      if (index == TXIFG) {
+          clrBitIFG(TXIFG);
+          return;
+      }
+      log("UNEXPECTED clearDMATrigger: " + index);
     }
 
     public String info() {

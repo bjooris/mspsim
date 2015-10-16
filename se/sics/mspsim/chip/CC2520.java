@@ -35,6 +35,7 @@
  */
 
 package se.sics.mspsim.chip;
+import java.util.Arrays;
 import se.sics.mspsim.core.*;
 import se.sics.mspsim.core.EmulationLogger.WarningType;
 import se.sics.mspsim.util.ArrayFIFO;
@@ -42,11 +43,15 @@ import se.sics.mspsim.util.CCITT_CRC;
 import se.sics.mspsim.util.Utils;
 
 public class CC2520 extends Radio802154 implements USARTListener, SPIData {
-	private static final boolean DEBUG = false;
-    public static class GPIO {
+    
+    private static final boolean DEBUG = true;
+    private static final boolean TAISC_DEBUG = true;
+
+    public class GPIO {
         private IOPort port;
         private int pin;
-
+        private int gpiof = GPIO_CFG_DUMMY;
+        
         boolean polarity = true;
         boolean isActive;
 
@@ -56,11 +61,22 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             port.setPinState(pin, isActive == polarity ? IOPort.PinState.HI : IOPort.PinState.LOW);
         }
 
+        public void assign(int gpiof) {
+            //restore to dummy
+            //vgpio[this.gpiof] = dummyGpio;
+            //this.gpiof = GPIO_CFG_DUMMY;
+            //reassign
+            vgpio[gpiof] = this;
+            this.gpiof = gpiof;
+            log("gpio: reconfigured: 0x" + Utils.hex(gpiof,2));
+        }
+        
         public boolean isActive() {
             return isActive;
         }
 
         public void setActive(boolean isActive) {
+            log("GPIO at port :" + (port ==null? "xxxx" :port.getName()) + " pin: " + pin + " f: 0x" + Utils.hex(gpiof,2) + " v: " + isActive);
             if (this.isActive != isActive) {
                 this.isActive = isActive;
                 if (port != null) {
@@ -79,6 +95,15 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         }
     }
 
+    public  class dummyGPIO extends GPIO{
+        @Override 
+        public void setActive(boolean isActive) {}
+        @Override 
+        public void setPolarity(boolean polarity) {}        
+    }
+    
+    
+    
     // FREG definitions (BSET/BCLR supported)
     public final static int REG_FRMFILT0            = 0x000;
     public final static int REG_FRMFILT1            = 0x001;
@@ -232,6 +257,82 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     public final static int EXC_RX_FRM_ABORTED      = 0x20;
     public final static int EXC_RX_FRM_UNDERFLOW    = 0x20;
 
+    
+    //inputs
+    public final static int GPIO_CFG_I_SIBUFEX			= 0x00 + 0x80;
+    public final static int GPIO_CFG_I_SRXMASKBITCLR		= 0x01 + 0x80;
+    public final static int GPIO_CFG_I_SRXMASKBITSET		= 0x02 + 0x80;
+    public final static int GPIO_CFG_I_SRXON			= 0x03 + 0x80;
+    public final static int GPIO_CFG_I_SSAMPLECCA		= 0x04 + 0x80;
+    public final static int GPIO_CFG_I_SACK			= 0x05 + 0x80;
+    public final static int GPIO_CFG_I_SACKPEND			= 0x06 + 0x80;
+    public final static int GPIO_CFG_I_SNACK			= 0x07 + 0x80;
+    public final static int GPIO_CFG_I_STXON			= 0x08 + 0x80;
+    public final static int GPIO_CFG_I_STXONCCA			= 0x09 + 0x80;
+    public final static int GPIO_CFG_I_SFLUSHRX			= 0x0A + 0x80;
+    public final static int GPIO_CFG_I_SFLUSHTX			= 0x0B + 0x80;
+    public final static int GPIO_CFG_I_SRXFIFOPOP		= 0x0C + 0x80;
+    public final static int GPIO_CFG_I_STXCAL			= 0x0D + 0x80;
+    public final static int GPIO_CFG_I_SRFOFF			= 0x0E + 0x80;
+    public final static int GPIO_CFG_I_SOSCOFF			= 0x0F + 0x80;
+    //Outputs
+    public final static int GPIO_CFG_O_CLOCK			= 0x00;
+    public final static int GPIO_CFG_O_RF_IDLE			= 0x01;
+    public final static int GPIO_CFG_O_TX_FRM_DONE		= 0x02;
+    public final static int GPIO_CFG_O_TX_ACK_DONE		= 0x03;
+    public final static int GPIO_CFG_O_TX_UNDERFLOW		= 0x04;
+    public final static int GPIO_CFG_O_TX_OVERFLOW		= 0x05;
+    public final static int GPIO_CFG_O_RX_UNDERFLOW		= 0x06;
+    public final static int GPIO_CFG_O_RX_OVERFLOW		= 0x07;
+    public final static int GPIO_CFG_O_RXENABLE_ZERO		= 0x08;
+    public final static int GPIO_CFG_O_RX_FRM_DONE		= 0x09;
+    public final static int GPIO_CFG_O_RX_FRM_ACCEPTED		= 0x0A;
+    public final static int GPIO_CFG_O_SRC_MATCH_DONE		= 0x0B;
+    public final static int GPIO_CFG_O_SRC_MATCH_FOUND		= 0x0C;
+    public final static int GPIO_CFG_O_FIFOP_			= 0x0D;
+    public final static int GPIO_CFG_O_SFD_			= 0x0E;
+    public final static int GPIO_CFG_O_DPU_L			= 0x0F;
+    public final static int GPIO_CFG_O_DPU_H			= 0x10;
+    public final static int GPIO_CFG_O_MEMADDR_ERROR		= 0x11;
+    public final static int GPIO_CFG_O_USAGE_ERROR		= 0x12;
+    public final static int GPIO_CFG_O_OPERAND_ERROR		= 0x13;
+    public final static int GPIO_CFG_O_SPI_ERROR			= 0x14;
+    public final static int GPIO_CFG_O_RF_NOLOCK		= 0x15;
+    public final static int GPIO_CFG_O_RX_FRM_ABORTED		= 0x16;
+    public final static int GPIO_CFG_O_RXBUFMOV_TIMEOUT		= 0x17;
+    public final static int GPIO_CFG_O_UNUSED			= 0x18;	
+    public final static int GPIO_CFG_O_EXCEPTION_CHN_A		= 0x21;
+    public final static int GPIO_CFG_O_EXCEPTION_CHN_B		= 0x22;	
+    public final static int GPIO_CFG_O_EXCEPTION_CHN_A_C	= 0x23;
+    public final static int GPIO_CFG_O_EXCEPTION_CHN_B_C	= 0x24;	
+    public final static int GPIO_CFG_O_EXCEPTION_RX_ERR		= 0x25;
+    public final static int GPIO_CFG_O_EXCEPTION_GEN_ERR        = 0x26;	
+    public final static int GPIO_CFG_O_FIFO			= 0x27;
+    public final static int GPIO_CFG_O_FIFOP			= 0x28;
+    public final static int GPIO_CFG_O_CCA			= 0x29;
+    public final static int GPIO_CFG_O_SFD			= 0x2A;
+    public final static int GPIO_CFG_O_LOCK			= 0x2B;
+    public final static int GPIO_CFG_O_RSSI_VALID		= 0x2C;
+    public final static int GPIO_CFG_O_SAMPLED_CCA		= 0x2D;
+    public final static int GPIO_CFG_O_RAND_I			= 0x2E;
+    public final static int GPIO_CFG_O_RAND_Q			= 0x2F;
+    public final static int GPIO_CFG_O_RAND_XOR_I_Q		= 0x30;
+    public final static int GPIO_CFG_O_SNIFF_CLK		= 0x31;
+    public final static int GPIO_CFG_O_SNIFF_DATA		= 0x32;
+    public final static int GPIO_CFG_O_MOD_SERIAL_CLK		= 0x33;
+    public final static int GPIO_CFG_O_MOD_SERIAL_DATA		= 0x34;
+    public final static int GPIO_CFG_O_RX_ACTIVE			= 0x43;
+    public final static int GPIO_CFG_O_TX_ACTIVE			= 0x44;
+    public final static int GPIO_CFG_O_DPU_CORE_ACTIVEP0	= 0x5E;
+    public final static int GPIO_CFG_O_DPU_CORE_ACTIVEP1        = 0x5F;
+    public final static int GPIO_CFG_O_DPU_STATE_L_ACT		= 0x62;
+    public final static int GPIO_CFG_O_DPU_STATE_H_ACT		= 0x63;
+    public final static int GPIO_CFG_O_WE_COME_0		= 0x7E;
+    public final static int GPIO_CFG_O_WE_COME_1			= 0x7F;
+    public final static int GPIO_CFG_DUMMY                      = 1 + GPIO_CFG_I_SOSCOFF;
+    public final static int GPIO_CFG_MAX                        = 1 + GPIO_CFG_DUMMY;
+    public final  GPIO dummyGpio = new dummyGPIO();
+    
     // RAM Addresses
     public static final int RAM_TXFIFO              = 0x100;
     public static final int RAM_RXFIFO              = 0x180;
@@ -383,7 +484,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
 
     private CC2520SPI cc2520SPI = new CC2520SPI(this);
     private SPICommand command;
-    private int[] spiData = new int[20]; /* SPI data buffer */
+    private int[] spiData = new int[128]; /* SPI data buffer */
     private int spiLen;
 
     // Buffer to hold 5 byte Synchronization header, as it is not written to the TXFIFO
@@ -393,12 +494,14 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     private int outputSPI;
 
     private boolean chipSelect;
+    private boolean resetPin = false;
+    
+    //real physical PGIO
     private final GPIO[] gpio = new GPIO[6];
-    private GPIO ccaGPIO;
-    private GPIO fifopGPIO;
-    private GPIO fifoGPIO;
-    private GPIO sfdGPIO;
-    private GPIO txactiveGPIO;
+    
+    //implemented GPIO functionality but virtual
+    private static GPIO[] vgpio = new GPIO[GPIO_CFG_MAX];
+
     private boolean currentFIFO;
     private boolean currentFIFOP;
 
@@ -408,11 +511,21 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     private int txCursor;
     private boolean isRadioOn;
 
+    private IOPort SOport;
+    private int SOpin;
+
+    public void setSOConfig(IOPort port, int pin) {
+        this.SOport = port;
+        this.SOpin = pin;
+    }
+    
+    
     private TimeEvent oscillatorEvent = new TimeEvent(0, "CC2520 OSC") {
         public void execute(long t) {
             status |= STATUS_XOSC16M_STABLE;
             if(DEBUG) log("Oscillator Stable Event.");
             setState(RadioState.IDLE);
+            SOport.setPinState(SOpin, IOPort.PinState.HI);        
             updateCCA();
         }
     };
@@ -420,7 +533,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     private TimeEvent vregEvent = new TimeEvent(0, "CC2520 VREG") {
         public void execute(long t) {
             if(DEBUG) log("VREG Started at: " + t + " cyc: " +
-                    cpu.cycles + " " + getTime());
+                    cpu.getTimeMillis() + " " + getTime());
             isRadioOn = true;
             setState(RadioState.POWER_DOWN);
             updateCCA();
@@ -476,6 +589,15 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             }
         }
     };
+    
+    private USARTSource uartSource;
+    
+    private TimeEvent spiRxEvent = new TimeEvent(0, "SPI RX trigger") {
+        public void execute(long t) {
+            uartSource.byteReceived(outputSPI);
+        }
+    };
+    
     private boolean overflow = false;
     private boolean frameRejected = false;
 
@@ -490,7 +612,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
 
     public CC2520(MSP430Core cpu) {
         super("CC2520", "Radio", cpu);
-
+        
         for (int i = 0; i < gpio.length; i++) {
             gpio[i] = new GPIO();
         }
@@ -552,15 +674,20 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         memory[REG_GPIOPOLARITY] = 0x3f;
         updateGPIOConfig();
 
-        fifoGPIO = gpio[1];
-        fifopGPIO = gpio[2];
-        ccaGPIO = gpio[3];
-        sfdGPIO = gpio[4];
-	txactiveGPIO = gpio[5];
+        GPIO dummyGP = new dummyGPIO();
+        Arrays.fill(vgpio, dummyGP);
+
+        gpio[0].assign(GPIO_CFG_O_CLOCK);
+        gpio[1].assign(GPIO_CFG_O_FIFO);
+        gpio[2].assign(GPIO_CFG_O_FIFOP);
+        gpio[3].assign(GPIO_CFG_O_CCA);
+        gpio[4].assign(GPIO_CFG_O_SFD);
+        gpio[5].assign(GPIO_CFG_DUMMY);
 
         setFIFO(false);
         setFIFOP(false);
         setSFD(false);
+        setResetPin(false);
         updateCCA();
     }
 
@@ -927,14 +1054,29 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             //            updateCCA();
             //            break;
         case REG_GPIOCTRL0:
-			/*
-			 * XXX TODO Implement support for GPIO control. Below example code
-			 * demonstrates how GPIO0 is set to fifop functionality (0x28).
-			 */
-			if (data == 0x28) {
-				fifopGPIO = gpio[0];
-			}
-        	break;
+            if (DEBUG) log("REG_GPIOCTRL0: => 0x" + Utils.hex16(data));
+            gpio[0].assign(data);
+            break;
+        case REG_GPIOCTRL1:
+            if (DEBUG) log("REG_GPIOCTRL1: => 0x" + Utils.hex16(data));
+            gpio[1].assign(data);
+            break;
+        case REG_GPIOCTRL2:
+            if (DEBUG) log("REG_GPIOCTRL2: => 0x" + Utils.hex16(data));
+            gpio[2].assign(data);
+            break;
+        case REG_GPIOCTRL3:
+            if (DEBUG) log("REG_GPIOCTRL3: => 0x" + Utils.hex16(data));
+            gpio[3].assign(data);
+            break;
+        case REG_GPIOCTRL4:
+            if (DEBUG) log("REG_GPIOCTRL4: => 0x" + Utils.hex16(data));
+            gpio[4].assign(data);
+            break;
+        case REG_GPIOCTRL5:
+            if (DEBUG) log("REG_GPIOCTRL5: => 0x" + Utils.hex16(data));
+            gpio[5].assign(data);
+            break;
         case REG_FSCTRL: {
             ChannelListener listener = this.channelListener;
             if (listener != null) {
@@ -960,22 +1102,25 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
 
     @Override
     public void dataReceived(USARTSource source, int data) {
+        uartSource = source;
         outputSPI = status; /* if nothing replace the outputSPI it will be output */
-        if (DEBUG) {
-            log("byte received: " + Utils.hex8(data) +
+        if (DEBUG && TAISC_DEBUG) {
+            log("byte received: 0x" + Utils.hex8(data) +
                     " (" + ((data >= ' ' && data <= 'Z') ? (char) data : '.') + ')' +
-                    " CS: " + chipSelect + " SPI(" + spiLen + "): " + (command == null ? "<waiting>" : command.name)
+                    " CS: " + chipSelect + " SPI(0x" + Utils.hex(spiLen,4) + "): " + (command == null ? "<waiting>" : command.name)
                     + " State: " + stateMachine);
         }
 
         if (!chipSelect) {
-            // Chip is not selected
+            log("byte received: 0x" + Utils.hex8(data) + "while CS is disabled");
             return;
         }
 
         if (stateMachine == RadioState.VREG_OFF) {
             /* No VREG but chip select */
             source.byteReceived(0);
+            outputSPI = 0;
+            cpu.scheduleCycleEvent(spiRxEvent,1);            
             logw(WarningType.EXECUTION, "**** Warning - writing to CC2520 when VREG is off!!!");
             return;
         }
@@ -997,6 +1142,9 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         if (spiLen < (spiData.length - 1)) {
             spiLen++;
         }
+        else {
+            log("Warning: spiLen > (spiData.length)");
+        }
 
         if (command != null) {
             command.dataReceived(data);
@@ -1007,7 +1155,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
                 spiLen = 0;
             }
         }
-        source.byteReceived(outputSPI);
+        cpu.scheduleCycleEvent(spiRxEvent,1);            
     }
 
     void rxon() {
@@ -1025,7 +1173,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
 
     void rxtxoff() {
         if (DEBUG) {
-            log("Strobe RXTX-OFF!!! at " + cpu.cycles);
+            log("Strobe RXTX-OFF!!! at " + cpu.getTimeMillis());
             if (stateMachine == RadioState.TX_ACK ||
                     stateMachine == RadioState.TX_FRAME ||
                     stateMachine == RadioState.RX_FRAME) {
@@ -1052,7 +1200,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
                 sendEvent("STXON", null);
             }
             // Starting up TX subsystem - indicate that we are in TX mode!
-            if (DEBUG) log("Strobe STXON - transmit on! at " + cpu.cycles);
+            if (DEBUG) log("Strobe STXON - transmit on! at " + cpu.getTimeMillis());
         }
     }
 
@@ -1075,7 +1223,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             setTXACTIVE(true);
                 memory[REG_FSMSTAT1] |= (1 << 1);
                 setState(RadioState.TX_CALIBRATE);
-                if (DEBUG) log("Strobe STXONCCA - transmit on! at " + cpu.cycles);
+                if (DEBUG) log("Strobe STXONCCA - transmit on! at " + cpu.getTimeMillis());
             }else{
                 if (DEBUG) log("STXONCCA Ignored, CCA false");
             }
@@ -1207,7 +1355,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
 
     void startOscillator() {
         // 1ms crystal startup from datasheet pg12
-        cpu.scheduleTimeEventMillis(oscillatorEvent, 1);
+        cpu.scheduleTimeEventMillis(oscillatorEvent, 0.1);
     }
 
     void stopOscillator() {
@@ -1270,7 +1418,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
          currentCCA = (status & STATUS_RSSI_VALID) > 0 && rssi < -95;
 
          if (currentCCA != oldCCA) {
-             ccaGPIO.setActive(currentCCA);
+             vgpio[GPIO_CFG_O_CCA].setActive(currentCCA);
              if (currentCCA) {
                  memory[REG_FSMSTAT1] |= 1 << 4;
              } else {
@@ -1281,29 +1429,29 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     }
 
     private void setTXACTIVE(boolean tx_active) {
-        txactiveGPIO.setActive(tx_active);
+        vgpio[GPIO_CFG_O_TX_ACTIVE].setActive(tx_active);
 	// TODO: is this needed?
         /*if (sfd) {
             memory[REG_FSMSTAT1] |= 1 << 5;
         } else {
             memory[REG_FSMSTAT1] &= ~(1 << 5);
         }*/
-        if (DEBUG) log("Settings TX active to: " + tx_active + "  " + cpu.cycles);
+        if (DEBUG) log("Settings TX active to: " + tx_active + "  " + cpu.getTimeMillis());
     }
 
     private void setSFD(boolean sfd) {
-        sfdGPIO.setActive(sfd);
+        vgpio[GPIO_CFG_O_SFD].setActive(sfd);
         if (sfd) {
             memory[REG_FSMSTAT1] |= 1 << 5;
         } else {
             memory[REG_FSMSTAT1] &= ~(1 << 5);
         }
-        if (DEBUG) log("SFD: " + sfd + "  " + cpu.cycles);
+        if (DEBUG) log("SFD: " + sfd + "  " + cpu.getTimeMillis());
     }
 
     private void setFIFOP(boolean fifop) {
         currentFIFOP = fifop;
-        fifopGPIO.setActive(fifop);
+        vgpio[GPIO_CFG_O_FIFOP].setActive(fifop);
         if (fifop) {
             memory[REG_FSMSTAT1] |= 1 << 6;
         } else {
@@ -1314,7 +1462,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
 
     private void setFIFO(boolean fifo) {
         currentFIFO = fifo;
-        fifoGPIO.setActive(fifo);
+        vgpio[GPIO_CFG_O_FIFO].setActive(fifo);
         if (fifo) {
             memory[REG_FSMSTAT1] |= 1 << 7;
         } else {
@@ -1525,7 +1673,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             // 0.6ms maximum vreg startup from datasheet pg 13
             // but Z1 platform does not work with 0.1 so trying with lower...
             cpu.scheduleTimeEventMillis(vregEvent, 0.05);
-            if (DEBUG) log("Scheduling vregEvent at: cyc = " + cpu.cycles +
+            if (DEBUG) log("Scheduling vregEvent at: cyc = " + cpu.getTimeMillis() +
                     " target: " + vregEvent.getTime() + " current: " + cpu.getTime());
         } else {
             isRadioOn = false;
@@ -1533,6 +1681,24 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         }
     }
 
+    public void setResetPin(boolean reset) {
+        if (reset == resetPin) return;
+        resetPin = reset;
+        if (reset) { //LOW
+            //reset();
+        }
+        else { //HIGH
+            SOport.setPinState(SOpin, IOPort.PinState.LOW);        
+            if(stateMachine == RadioState.POWER_DOWN) {
+                startOscillator();
+            }
+        }
+
+        if (DEBUG /*&& TAISC_DEBUG*/) {
+            log("ResetPin: " + reset + "-----------------------------------------------------------------");
+        }
+    }
+    
     public void setChipSelect(boolean select) {
         chipSelect = select;
         if (!chipSelect) {
@@ -1543,8 +1709,8 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             command = null;
         }
 
-        if (DEBUG) {
-            log("ChipSelect: " + chipSelect);
+        if (DEBUG /*&& TAISC_DEBUG*/) {
+            log("ChipSelect: " + chipSelect + "-----------------------------------------------------------------");
         }
     }
 
@@ -1552,10 +1718,14 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         return chipSelect;
     }
 
-    public void setGPIO(int index, IOPort port, int pin) {
+    public void configGPIO(int index, IOPort port, int pin) {
         gpio[index].setConfig(port, pin);
     }
 
+    public void setGPIO(int index, boolean value) {
+        
+    }
+    
 
     /*****************************************************************************
      * Chip APIs
@@ -1585,7 +1755,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
                 "  OSC Stable: " + ((status & STATUS_XOSC16M_STABLE) > 0) +
                 "  GPIO Polarity: 0x" + Utils.hex8(memory[REG_GPIOPOLARITY]) +
                 "\n RSSI Valid: " + ((status & STATUS_RSSI_VALID) > 0) + "  CCA: " + currentCCA +
-                "\n FIFOP: " + currentFIFOP + " threshold: " + fifopThr + "  FIFO: " + currentFIFO + "  SFD: " + sfdGPIO.isActive() +
+                "\n FIFOP: " + currentFIFOP + " threshold: " + fifopThr + "  FIFO: " + currentFIFO + "  SFD: " + vgpio[GPIO_CFG_O_SFD].isActive() +
                 "\n " + rxFIFO.stateToString() + " expPacketLen: " + rxlen +
                 "\n Radio State: " + stateMachine + "  SPI State: " + commandStr +
                 "\n AutoACK: " + autoAck + "  AddrDecode: " + frameFilter + "  AutoCRC: " + autoCRC +

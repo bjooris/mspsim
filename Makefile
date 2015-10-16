@@ -60,7 +60,8 @@ ESBFIRMWARE = firmware/esb/sensor-demo.esb
 SKYFIRMWARE = firmware/sky/blink.sky
 Z1FIRMWARE = firmware/z1/blink.z1
 WISMOTEFIRMWARE = firmware/wismote/blink.wismote
-RM090FIRMWARE = firmware/rm090/hello-world.rm090
+#RM090FIRMWARE = firmware/rm090/hello-world.rm090
+RM090FIRMWARE = /tmp/example-ping6.rm090
 TYNDALLFIRMWARE = firmware/tyndall/blink.tyndall
 EXP5438FIRMWARE = firmware/exp5438/testcase-bits.exp5438
 else

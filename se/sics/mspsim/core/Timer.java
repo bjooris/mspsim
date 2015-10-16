@@ -705,6 +705,7 @@ public class Timer extends IOUnit {
       // Control register...
       int index = (iAddress - TCCTL0) / 2;
       CCR reg = ccr[index];
+      boolean softwareTrigger = (data & CC_IFG) > (reg.tcctl & CC_IFG);
       reg.tcctl = data;
       reg.outMode = (data >> 5)& 7;
       boolean oldCapture = reg.captureOn;
@@ -713,6 +714,10 @@ public class Timer extends IOUnit {
       reg.inputSel = (data >> 12) & 3;
       int src = reg.inputSrc = srcMap[4 + index * 4 + reg.inputSel];
       reg.capMode = (data >> 14) & 3;
+      
+      if (softwareTrigger) {
+          ccr[index].triggerInterrupt(1);
+      }
 
       /* capture a port state? */
       if (!oldCapture && reg.captureOn && (src & SRC_PORT) != 0) {
@@ -792,36 +797,35 @@ public class Timer extends IOUnit {
   void updateCyclesMultiplicator() {
     cyclesMultiplicator = inputDivider;
     if (clockSource == SRC_ACLK) {
-      cyclesMultiplicator = (cyclesMultiplicator * cpu.smclkFrq) /
-      cpu.aclkFrq;
-      if (DEBUG) {
-        log("setting multiplicator to: " + cyclesMultiplicator);
+      cyclesMultiplicator = inputDivider * (cpu.dcoFrq / cpu.aclkFrq);
+      if (DEBUG || true) {
+        log("setting multiplicator to: " + cyclesMultiplicator + " MCLK: " + cpu.dcoFrq + " ACLK: " + cpu.aclkFrq);
       }
     }
-    clockSpeed = (int) (cpu.smclkFrq / cyclesMultiplicator);
+    if (clockSource == SRC_SMCLK) {
+      cyclesMultiplicator = inputDivider * (cpu.dcoFrq / cpu.smclkFrq);
+      if (DEBUG || true) {
+        log("setting multiplicator to: " + cyclesMultiplicator + " MCLK: " + cpu.dcoFrq + " SMCLK: " + cpu.smclkFrq);
+      }
+    }
+    clockSpeed = (int) (cpu.dcoFrq / cyclesMultiplicator);
   }
   
   void resetCounter(long cycles) {
-      double divider = 1.0;
-      if (clockSource == SRC_ACLK) {
-          // Should later be divided with DCO clock?
-          divider = 1.0 * cpu.smclkFrq / cpu.aclkFrq;
-      }
-      divider = divider * inputDivider;
+    updateCyclesMultiplicator();
         
       // These calculations assume that we have a big counter that counts from
       // last reset and upwards (without any roundoff errors).
       // tick - represent the counted value since last "reset" of some kind
       // counterAcc - represent the value of the counter at the last reset.
       long cycctr = cycles - counterStart;
-      double tick = cycctr / divider;
-      counterPassed = (int) (divider * (tick - (long) (tick)));
+      double tick = cycctr / cyclesMultiplicator;
+      counterPassed = (int) (cyclesMultiplicator * (tick - (long) (tick)));
       
     counterStart = cycles - counterPassed;
     // set counterACC to the last returned value (which is the same
     // as bigCounter except that it is "moduloed" to a smaller value
     counterAcc = counter;
-    updateCyclesMultiplicator();
     if (DEBUG) { 
       log("Counter reset at " + cycles +  " cycMul: " + cyclesMultiplicator);
     }
@@ -842,20 +846,14 @@ public class Timer extends IOUnit {
     // Needs to be non-integer since smclk Frq can be lower
     // than aclk
     /* this should be cached and changed whenever clockSource change!!! */
-    double divider = 1;
-    if (clockSource == SRC_ACLK) {
-      // Should later be divided with DCO clock?
-      divider = 1.0 * cpu.smclkFrq / cpu.aclkFrq;
-    }
-    divider = divider * inputDivider;
     
     // These calculations assume that we have a big counter that counts from
     // last reset and upwards (without any roundoff errors).
     // tick - represent the counted value since last "reset" of some kind
     // counterAcc - represent the value of the counter at the last reset.
     long cycctr = cycles - counterStart;
-    double tick = cycctr / divider;
-    counterPassed = (int) (divider * (tick - (long) (tick)));
+    double tick = cycctr / cyclesMultiplicator;
+    counterPassed = (int) (cyclesMultiplicator * (tick - (long) (tick)));
     long bigCounter = (long) (tick + counterAcc);
     
     switch (mode) {
@@ -885,7 +883,7 @@ public class Timer extends IOUnit {
 
     if (DEBUG) {
       log("Updating counter cycctr: " + cycctr +
-          " divider: " + divider + " mode:" + mode + " => " + counter);
+          " divider: " + cyclesMultiplicator + " mode:" + mode + " => " + counter);
     }
    return counter;
   }
