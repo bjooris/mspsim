@@ -375,6 +375,7 @@ public class IOPort extends IOUnit {
 
     // for HW to set hi/low on the pins...
     public void setPinState(int pin, PinState state) {
+        if (DEBUG) log("Pin changed : " + pin );
         if (pinState[pin] != state) {
             pinState[pin] = state;
             int bit = 1 << pin;
@@ -409,8 +410,8 @@ public class IOPort extends IOUnit {
                 /* should not be pin and 0 here
                  * pin might need configuration and 0 can maybe also be 1? 
                  */
-                //        if (DEBUG) log("Notifying timer of changed pin value");
-                timerCapture[pin].capture(pin, 0, state);
+                if (DEBUG) log("Notifying timer of changed capture for pin: " + pin );
+                timerCapture[pin].capture(port, pin, state);
             }
 
         }

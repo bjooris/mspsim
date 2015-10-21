@@ -71,6 +71,7 @@ public class RM090Node extends GenericNode implements PortListener, USARTListene
             boolean newState = ((data & pinMask) != 0);
             boolean result = (newState != state);
             state = newState;
+            //System.err.println("pinMask result portid= " +portId + " pinid " + pinId + " r "+ result);
             return result;            
         }
         
@@ -173,6 +174,7 @@ public class RM090Node extends GenericNode implements PortListener, USARTListene
     private Pin CC2520_CS = new Pin(3, 0, false) /*active low */{
         @Override
         public void evaluate(int data) {
+            System.err.println("eval CS " + data + " "+ pinMask) ;
             if (super.checkIfStateChanged(~data)) {
                 radio.setChipSelect(state);
             }

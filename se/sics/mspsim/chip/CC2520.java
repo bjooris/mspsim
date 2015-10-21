@@ -49,7 +49,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
 
     public class GPIO {
         private IOPort port;
-        private int pin;
+        public int pin;
         private int gpiof = GPIO_CFG_DUMMY;
         
         boolean polarity = true;
@@ -97,9 +97,13 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
 
     public  class dummyGPIO extends GPIO{
         @Override 
-        public void setActive(boolean isActive) {}
+        public void setActive(boolean isActive) {
+            System.err.println("setActDum ------------------------------------------------- " + pin);
+        }
         @Override 
-        public void setPolarity(boolean polarity) {}        
+        public void setPolarity(boolean polarity) {
+            System.err.println("setPolDum ------------------------------------------------- " + pin);
+        }        
     }
     
     
@@ -1054,28 +1058,14 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             //            updateCCA();
             //            break;
         case REG_GPIOCTRL0:
-            if (DEBUG) log("REG_GPIOCTRL0: => 0x" + Utils.hex16(data));
-            gpio[0].assign(data);
-            break;
         case REG_GPIOCTRL1:
-            if (DEBUG) log("REG_GPIOCTRL1: => 0x" + Utils.hex16(data));
-            gpio[1].assign(data);
-            break;
         case REG_GPIOCTRL2:
-            if (DEBUG) log("REG_GPIOCTRL2: => 0x" + Utils.hex16(data));
-            gpio[2].assign(data);
-            break;
         case REG_GPIOCTRL3:
-            if (DEBUG) log("REG_GPIOCTRL3: => 0x" + Utils.hex16(data));
-            gpio[3].assign(data);
-            break;
         case REG_GPIOCTRL4:
-            if (DEBUG) log("REG_GPIOCTRL4: => 0x" + Utils.hex16(data));
-            gpio[4].assign(data);
-            break;
         case REG_GPIOCTRL5:
-            if (DEBUG) log("REG_GPIOCTRL5: => 0x" + Utils.hex16(data));
-            gpio[5].assign(data);
+            int index= (address-REG_GPIOCTRL0);
+            if (DEBUG) log("REG_GPIOCTRL" + index +": => 0x" + Utils.hex16(data));
+            gpio[index].assign(data);
             break;
         case REG_FSCTRL: {
             ChannelListener listener = this.channelListener;
@@ -1108,7 +1098,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             log("byte received: 0x" + Utils.hex8(data) +
                     " (" + ((data >= ' ' && data <= 'Z') ? (char) data : '.') + ')' +
                     " CS: " + chipSelect + " SPI(0x" + Utils.hex(spiLen,4) + "): " + (command == null ? "<waiting>" : command.name)
-                    + " State: " + stateMachine);
+                    + " State: " + stateMachine + " @ " + cpu.getTimeMillis());
         }
 
         if (!chipSelect) {
@@ -1446,7 +1436,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         } else {
             memory[REG_FSMSTAT1] &= ~(1 << 5);
         }
-        if (DEBUG) log("SFD: " + sfd + "  " + cpu.getTimeMillis());
+        System.err.println("SFD: " + sfd + "**************************************************  " + cpu.getTimeMillis());
     }
 
     private void setFIFOP(boolean fifop) {
@@ -1701,7 +1691,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     
     public void setChipSelect(boolean select) {
         chipSelect = select;
-        if (!chipSelect) {
+        if (chipSelect) {
             spiLen = 0;
             if (command != null) {
                 command.executeSPICommand();
@@ -1711,6 +1701,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
 
         if (DEBUG /*&& TAISC_DEBUG*/) {
             log("ChipSelect: " + chipSelect + "-----------------------------------------------------------------");
+            System.err.println("ChipSelect: " + chipSelect + "-----------------------------------------------------------------");
         }
     }
 

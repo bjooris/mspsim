@@ -264,14 +264,14 @@ public class Timer extends IOUnit {
                   expCompare = (expCompare + expCapInterval) & 0xffff;
                   expCaptureTime += expCapInterval * cyclesMultiplicator;
                   if (DEBUG) {
-                      log("setting expCaptureTime to next capture: " + expCaptureTime);
+                      log("setting expCaptureTime on "+getName() + " to next capture: " + expCaptureTime);
                   }
               } else {
                   // Update expected compare time for this compare/cap register
                   // 0x10000 cycles... e.g. a full 16 bits wrap of the timer
                   expCaptureTime = expCaptureTime + (long) (0x10000 * cyclesMultiplicator);
                   if (DEBUG) {
-                      log("setting expCaptureTime to full wrap: " + expCaptureTime);
+                      log("setting expCaptureTime on "+getName() + " to full wrap: " + expCaptureTime);
                   }
               }
               /* schedule again! */
@@ -283,6 +283,7 @@ public class Timer extends IOUnit {
       /* this method only takes care of the interrupt triggering! */
       public void triggerInterrupt(long cycles) {
           /* trigger if trigger should be... */
+          Thread.dumpStack();         
           if ((tcctl & CC_TRIGGER_INT) == CC_TRIGGER_INT) {
               if (index == 0) {
                   if (DEBUG) log("triggering interrupt");
@@ -300,17 +301,11 @@ public class Timer extends IOUnit {
 
       public void updateCaptures(long cycles) {
           int divisor = 1;
-          int frqClk = 1;
           /* used to set next capture independent of counter when another clock is source
            * for the capture register!
            */
           boolean clkSource = false;
 
-          if (clockSource == SRC_SMCLK) {
-              frqClk = cpu.smclkFrq / inputDivider;
-          } else if (clockSource == SRC_ACLK) {
-              frqClk = cpu.aclkFrq / inputDivider;
-          }
 
           // Handle the captures...
           if (captureOn) {
@@ -321,12 +316,12 @@ public class Timer extends IOUnit {
 
               if (DEBUG) {
                   log("expCapInterval[" + index + "] frq = " +
-                          frqClk + " div = " + divisor + " SMCLK_FRQ: " + cpu.smclkFrq);
+                          clockSource + " div = " + divisor + " SMCLK_FRQ: " + cpu.smclkFrq);
               }
 
               // This is used to calculate expected time before next capture of
               // clock-edge to occur - including what value the compare reg. will get
-              expCapInterval = frqClk / divisor;
+              expCapInterval = clockSource / divisor;
               // This is not 100% correct - depending on clock mode I guess...
               if (clkSource) {
                   /* assume that this was capture recently */
@@ -570,6 +565,7 @@ public class Timer extends IOUnit {
   }
 
   private void resetTIV(long cycles) {
+      System.err.println("resetTIV resetTIV resetTIV resetTIV resetTIV :" + lastTIV + " @ " + cpu.getTimeMillis());
     if (lastTIV == timerOverflow) {
       interruptPending = false;
       if (DEBUG) {
@@ -587,6 +583,7 @@ public class Timer extends IOUnit {
     cpu.flagInterrupt(ccr1Vector, this, false);
     lastTIV = 0;
 
+    if (true) {
     /* reevaluate interrupts for the ccr1 vector - possibly flag on again... */
     for (int i = 1; i < noCompare; i++) {
         ccr[i].triggerInterrupt(cycles);
@@ -595,6 +592,7 @@ public class Timer extends IOUnit {
     if (lastTIV == 0 && interruptEnable & interruptPending) {
         lastTIV = timerOverflow;
         cpu.flagInterrupt(ccr1Vector, this, true);
+        }
     }
   }
 
@@ -715,10 +713,10 @@ public class Timer extends IOUnit {
       int src = reg.inputSrc = srcMap[4 + index * 4 + reg.inputSel];
       reg.capMode = (data >> 14) & 3;
       
-      if (softwareTrigger) {
-          ccr[index].triggerInterrupt(1);
-      }
 
+      log("==========================================================");
+      log("=="+oldCapture+"==="+reg.captureOn+"===="+src+"====="+SRC_PORT+"====" + index);
+      log("==========================================================");
       /* capture a port state? */
       if (!oldCapture && reg.captureOn && (src & SRC_PORT) != 0) {
         int port = (src & 0xff) >> 4;
@@ -727,6 +725,11 @@ public class Timer extends IOUnit {
         if (DEBUG) log("Assigning Port: " + port + " pin: " + pin +
             " for capture");
         ioPort.setTimerCapture(this, pin);
+      }
+
+      if (softwareTrigger) {
+          if (DEBUG) log("softwareTrigger");
+          ccr[index].triggerInterrupt(1);
       }
       
       updateCounter(cycles);
@@ -913,9 +916,26 @@ public class Timer extends IOUnit {
    * @param ccrIndex - the capture register
    * @param source - the capture source (0/1)
    */
-  public void capture(int ccrIndex, int source, IOPort.PinState value) {
+  public void capture(int port, int pin, IOPort.PinState value) {
+      
+      int ccrIndex;
+      int source = 4;
+      int target = SRC_PORT + (port << 4 ) + pin;
+      boolean lock = false;
+      for (ccrIndex = 0; ccrIndex < noCompare;  ccrIndex ++) {
+          for (source = 0; source < 4;  source++) {
+              if (srcMap[4 + ccrIndex * 4 + source] == target) {
+                  lock = true;
+                  break;
+              }
+          }
+          if (lock) break;
+      }
+      if (!lock) return;
       CCR reg = ccr[ccrIndex];
-      if (ccrIndex < noCompare && reg.captureOn && reg.inputSel == source) {
+      System.err.println("capture lock found on ccr index: " + ccrIndex + " and source: " + source + " on: " + reg.captureOn + " sel: " + reg.inputSel);
+      
+      if (reg.captureOn && reg.inputSel == source) {
           /* This is obviously a capture! */
           boolean rise = (reg.capMode & CM_RISING) != 0;
           boolean fall = (reg.capMode & CM_FALLING) != 0;
@@ -945,7 +965,7 @@ public class Timer extends IOUnit {
       ccr[0].tcctl &= ~CC_IFG;
     }
     if (MSP430Core.debugInterrupts) {
-      System.out.println(getName() + " >>>> interrupt Serviced " + lastTIV + 
+      if (DEBUG) log(getName() + " >>>> interrupt Serviced " + lastTIV + 
           " at cycles: " + cpu.cycles + " servicing delay: " + (cpu.cycles - triggerTime));
     }
     /* old method is replaced */

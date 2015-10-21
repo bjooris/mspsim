@@ -103,7 +103,7 @@
   </target>
 
   <target name="runRM090" depends="jar" description="run MSPSim with platform RM090">
-    <property name="FIRMWAREFILE" value="/tmp/example-ping6.rm090"/>
+    <property name="FIRMWAREFILE" value="/home/bjooris/test.rm090"/>
     <java fork="true" classpath="${jarfile}" classname="se.sics.mspsim.platform.rm090.RM090Node">
       <arg value="${FIRMWAREFILE}"/>
       <arg line="${ARGS}"/>

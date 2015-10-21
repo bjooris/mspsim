@@ -50,6 +50,12 @@ import se.sics.mspsim.core.Multiplier32;
 import se.sics.mspsim.core.PMM;
 import se.sics.mspsim.core.SysReg;
 import se.sics.mspsim.core.Timer;
+import static se.sics.mspsim.core.Timer.SRC_ACLK;
+import static se.sics.mspsim.core.Timer.SRC_CAOUT;
+import static se.sics.mspsim.core.Timer.SRC_GND;
+import static se.sics.mspsim.core.Timer.SRC_PORT;
+import static se.sics.mspsim.core.Timer.SRC_SMCLK;
+import static se.sics.mspsim.core.Timer.SRC_VCC;
 import se.sics.mspsim.core.UnifiedClockSystem;
 import se.sics.mspsim.util.Utils;
 
@@ -73,6 +79,32 @@ public class MSP430f5437Config extends MSP430Config {
             };
     
     
+    public static final int[] TIMERMAP_A0 = new int[] {
+      SRC_PORT + 0x10,  SRC_ACLK,           SRC_SMCLK,      SRC_PORT + 0x10,    // Timer
+      SRC_PORT + 0x11,  SRC_PORT + 0x80,    SRC_GND,        SRC_VCC,            // Cap 0
+      SRC_PORT + 0x12,  SRC_PORT + 0x81,    SRC_GND,        SRC_VCC,            // Cap 1
+      SRC_PORT + 0x13,  SRC_PORT + 0x82,    SRC_GND,        SRC_VCC,            // Cap 2
+      SRC_PORT + 0x14,  SRC_PORT + 0x83,    SRC_GND,        SRC_VCC,            // Cap 3
+      SRC_PORT + 0x15,  SRC_PORT + 0x84,    SRC_GND,        SRC_VCC,            // Cap 4
+    };
+
+    public static final int[] TIMERMAP_A1 = new int[] {
+      SRC_PORT + 0x20,  SRC_ACLK,           SRC_SMCLK,      SRC_PORT + 0x20,    // Timer
+      SRC_PORT + 0x21,  SRC_PORT + 0x85,    SRC_GND,        SRC_VCC,            // Cap 0
+      SRC_PORT + 0x22,  SRC_PORT + 0x86,    SRC_GND,        SRC_VCC,            // Cap 1
+      SRC_PORT + 0x23,  SRC_PORT + 0x73,    SRC_GND,        SRC_VCC,            // Cap 2
+    };
+    
+    public static final int[] TIMERMAP_B0 = new int[] {
+      SRC_PORT + 0x47,  SRC_ACLK,           SRC_SMCLK,      SRC_PORT + 0x47,    // Timer
+      SRC_PORT + 0x40,  SRC_PORT + 0x40,    SRC_GND,        SRC_VCC,            // Cap 0
+      SRC_PORT + 0x41,  SRC_PORT + 0x41,    SRC_GND,        SRC_VCC,            // Cap 0
+      SRC_PORT + 0x42,  SRC_PORT + 0x42,    SRC_GND,        SRC_VCC,            // Cap 0
+      SRC_PORT + 0x43,  SRC_PORT + 0x43,    SRC_GND,        SRC_VCC,            // Cap 0
+      SRC_PORT + 0x44,  SRC_PORT + 0x44,    SRC_GND,        SRC_VCC,            // Cap 0
+      SRC_PORT + 0x45,  SRC_PORT + 0x45,    SRC_GND,        SRC_VCC,            // Cap 0
+      SRC_PORT + 0x46,  SRC_ACLK,           SRC_GND,        SRC_VCC,            // Cap 0
+    };
     
     public MSP430f5437Config() {
         /* 64 vectors for the MSP430f54xx series */
@@ -82,9 +114,9 @@ public class MSP430f5437Config extends MSP430Config {
         sfrOffset = 0x100;
         
         /* configuration for the timers - need to set-up new source maps!!! */
-        TimerConfig timerA0 = new TimerConfig(54, 53, 5, 0x340, Timer.TIMER_Bx149, "TimerA0", 0x340 + 0x2e);
-        TimerConfig timerA1 = new TimerConfig(49, 48, 3, 0x380, Timer.TIMER_Ax149, "TimerA1", 0x380 + 0x2e);
-        TimerConfig timerB0 = new TimerConfig(60, 59, 7, 0x3C0, Timer.TIMER_Bx149, "TimerB0",  0x3C0 + 0x2e);
+        TimerConfig timerA0 = new TimerConfig(54, 53, 5, 0x340, TIMERMAP_A0, "TimerA0", 0x340 + 0x2e);
+        TimerConfig timerA1 = new TimerConfig(49, 48, 3, 0x380, TIMERMAP_A1, "TimerA1", 0x380 + 0x2e);
+        TimerConfig timerB0 = new TimerConfig(60, 59, 7, 0x3C0, TIMERMAP_B0, "TimerB0",  0x3C0 + 0x2e);
         timerConfig = new TimerConfig[] {timerA0, timerA1, timerB0};
         
         uartConfig = new UARTConfig[] {
