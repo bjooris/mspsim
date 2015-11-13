@@ -283,7 +283,7 @@ public class Timer extends IOUnit {
       /* this method only takes care of the interrupt triggering! */
       public void triggerInterrupt(long cycles) {
           /* trigger if trigger should be... */
-          Thread.dumpStack();         
+          //Thread.dumpStack();         
           if ((tcctl & CC_TRIGGER_INT) == CC_TRIGGER_INT) {
               if (index == 0) {
                   if (DEBUG) log("triggering interrupt");
@@ -300,36 +300,17 @@ public class Timer extends IOUnit {
       }
 
       public void updateCaptures(long cycles) {
-          int divisor = 1;
-          /* used to set next capture independent of counter when another clock is source
-           * for the capture register!
-           */
-          boolean clkSource = false;
-
-
           // Handle the captures...
           if (captureOn) {
-              if (inputSrc == SRC_ACLK) {
-                  divisor = cpu.aclkFrq;
-                  clkSource = true;
-              }
-
               if (DEBUG) {
-                  log("expCapInterval[" + index + "] frq = " +
-                          clockSource + " div = " + divisor + " SMCLK_FRQ: " + cpu.smclkFrq);
+                  log("expCapInterval[" + index + "] clockSpeed = " +
+                          clockSpeed + " div = " + inputDivider);
               }
 
               // This is used to calculate expected time before next capture of
               // clock-edge to occur - including what value the compare reg. will get
-              expCapInterval = clockSource / divisor;
-              // This is not 100% correct - depending on clock mode I guess...
-              if (clkSource) {
-                  /* assume that this was capture recently */
-                  //            System.out.println(">>> ACLK! fixing with expCompare!!!");
-                  expCompare = (tccr + expCapInterval) & 0xffff;
-              } else {
-                  expCompare = (counter + expCapInterval) & 0xffff;
-              }
+              expCapInterval = clockSpeed / inputDivider;
+              expCompare = (counter + expCapInterval) & 0xffff;
               // This could be formulated in something other than cycles...
               // ...??? should be multiplied with clockspeed diff also?
               expCaptureTime = cycles + (long)(expCapInterval * cyclesMultiplicator);
@@ -565,7 +546,7 @@ public class Timer extends IOUnit {
   }
 
   private void resetTIV(long cycles) {
-      System.err.println("resetTIV resetTIV resetTIV resetTIV resetTIV :" + lastTIV + " @ " + cpu.getTimeMillis());
+    //System.err.println("resetTIV >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> :" + lastTIV + " @ " + cpu.getTimeMillis());
     if (lastTIV == timerOverflow) {
       interruptPending = false;
       if (DEBUG) {
@@ -735,7 +716,7 @@ public class Timer extends IOUnit {
       updateCounter(cycles);
       
       if (DEBUG) {
-	log(getName() + "Write: CCTL" + index + ": => " + Utils.hex16(data) +
+	log("Write: CCTL" + index + ": => 0x" + Utils.hex16(data) +
 	        " CM: " + capNames[reg.capMode] +
 	        " CCIS:" + reg.inputSel + " name: " +
 	        getSourceName(reg.inputSrc) +
@@ -743,8 +724,7 @@ public class Timer extends IOUnit {
 	        " IE: " + ((data & CC_IE) != 0));
       }
 
-      reg.updateCaptures(cycles);
-//      updateCaptures(index, cycles);
+      //reg.updateCaptures(cycles);
       break;
       // Write to compare register!
     case TCCR0:

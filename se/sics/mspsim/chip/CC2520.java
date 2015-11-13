@@ -56,6 +56,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         boolean isActive;
 
         public void setConfig(IOPort port, int pin) {
+            log("setConfig ------------------------------------------------- " + pin);
             this.port = port;
             this.pin = pin;
             port.setPinState(pin, isActive == polarity ? IOPort.PinState.HI : IOPort.PinState.LOW);
