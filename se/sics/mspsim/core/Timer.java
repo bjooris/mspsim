@@ -32,6 +32,7 @@
  * Timer
  *
  * Author  : Joakim Eriksson
+ * Author  : Bart Jooris
  * Created : Sun Oct 21 22:00:00 2007
  */
 
@@ -695,9 +696,9 @@ public class Timer extends IOUnit {
       reg.capMode = (data >> 14) & 3;
       
 
-      log("==========================================================");
-      log("=="+oldCapture+"==="+reg.captureOn+"===="+src+"====="+SRC_PORT+"====" + index);
-      log("==========================================================");
+      //log("==========================================================");
+      //log("=="+oldCapture+"==="+reg.captureOn+"===="+src+"====="+SRC_PORT+"====" + index);
+      //log("==========================================================");
       /* capture a port state? */
       if (!oldCapture && reg.captureOn && (src & SRC_PORT) != 0) {
         int port = (src & 0xff) >> 4;
@@ -781,14 +782,14 @@ public class Timer extends IOUnit {
     cyclesMultiplicator = inputDivider;
     if (clockSource == SRC_ACLK) {
       cyclesMultiplicator = inputDivider * (cpu.dcoFrq / cpu.aclkFrq);
-      if (DEBUG || true) {
-        log("setting multiplicator to: " + cyclesMultiplicator + " MCLK: " + cpu.dcoFrq + " ACLK: " + cpu.aclkFrq);
+      if (DEBUG) {
+        //log("setting multiplicator to: " + cyclesMultiplicator + " MCLK: " + cpu.dcoFrq + " ACLK: " + cpu.aclkFrq);
       }
     }
     if (clockSource == SRC_SMCLK) {
       cyclesMultiplicator = inputDivider * (cpu.dcoFrq / cpu.smclkFrq);
-      if (DEBUG || true) {
-        log("setting multiplicator to: " + cyclesMultiplicator + " MCLK: " + cpu.dcoFrq + " SMCLK: " + cpu.smclkFrq);
+      if (DEBUG) {
+        //log("setting multiplicator to: " + cyclesMultiplicator + " MCLK: " + cpu.dcoFrq + " SMCLK: " + cpu.smclkFrq);
       }
     }
     clockSpeed = (int) (cpu.dcoFrq / cyclesMultiplicator);

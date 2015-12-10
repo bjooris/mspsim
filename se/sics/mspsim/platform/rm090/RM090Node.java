@@ -33,6 +33,7 @@
  *
  * @author Niclas Finne
  * @author Floris Van den Abeele
+ * @author Bart Jooris
  */
 
 package se.sics.mspsim.platform.rm090;
@@ -174,7 +175,7 @@ public class RM090Node extends GenericNode implements PortListener, USARTListene
     private Pin CC2520_CS = new Pin(3, 0, false) /*active low */{
         @Override
         public void evaluate(int data) {
-            System.err.println("eval CS " + data + " "+ pinMask) ;
+            //log("eval CS " + data + " "+ pinMask) ;
             if (super.checkIfStateChanged(~data)) {
                 radio.setChipSelect(state);
             }

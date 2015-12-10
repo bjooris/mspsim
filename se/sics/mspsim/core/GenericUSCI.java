@@ -161,7 +161,7 @@ public class GenericUSCI extends IOUnit implements DMAxv2Trigger, USARTSource {
     
     private void handleTransmit(long cycles) {
         if (cpu.getMode() >= MSP430Core.MODE_LPM3) {
-            System.out.println(getName() + " Warning: USART transmission during LPM!!! ");
+            //System.out.println(getName() + " Warning: USART transmission during LPM!!! " +  cpu.getMode());            
         }
         
         if (transmitting) {

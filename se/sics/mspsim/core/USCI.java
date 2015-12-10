@@ -412,7 +412,7 @@ public class USCI extends IOUnit implements SFRModule, DMATrigger, USARTSource {
 
   private void handleTransmit(long cycles) {
     if (cpu.getMode() >= MSP430Core.MODE_LPM3) {
-      logw(WarningType.EXECUTION, "Warning: USART transmission during LPM!!! " + nextTXByte);
+      logw(WarningType.EXECUTION, "Warning: USART transmission during LPM!!! [" + nextTXByte + "] " + cpu.getMode());
     }
 
     if (transmitting) {

@@ -1,3 +1,8 @@
+/**
+ * @author Bart Jooris
+ */
+
+
 package se.sics.mspsim.core;
 
 import se.sics.mspsim.core.EmulationLogger.WarningType;
@@ -5,6 +10,9 @@ import se.sics.mspsim.util.Utils;
 
 public class DMAxv2 extends IOUnit {
 
+    private static final boolean DEBUG = true;
+    
+    
     // DMA block offset
     public static final int DMA_BLOCK_CONTROL   = 0x00;
     public static final int DMA_BLOCK_CHANNEL0  = 0x10;
@@ -140,9 +148,13 @@ public class DMAxv2 extends IOUnit {
                 boolean clearingIFG = dmaIFG && ((data & IFG_MASK) == 0);
                 dmaIFG = (data & IFG_MASK) > 0; /* bit 3 */
                 dmaIE = (data & 0x04) > 0; /* bit 2 */
-                if (DEBUG) log("DMA Ch." + channelNo + ": conf srcInc: " + srcIncr + " dstInc:" + dstIncr
+                if (DEBUG) {
+                    /*
+                    log("DMA Ch." + channelNo + ": conf srcInc: " + srcIncr + " dstInc:" + dstIncr
                         + " en: " + enable + " srcB:" + srcByteMode + " dstB:" + dstByteMode + " lvl: " + dmaLevel +
                         " transMode: " + transferMode + " ie:" + dmaIE + " ifg:" + dmaIFG);
+                    */
+                }
                 if (dmaIE && clearingIFG) {                
                         resetDMAIV();
                 }
@@ -189,7 +201,9 @@ public class DMAxv2 extends IOUnit {
             case DMAxCTL:
                 /* set the IFG */
                 ctl = (ctl & ~IFG_MASK) | (dmaIFG ? IFG_MASK : 0);
-                if (DEBUG) log ("DMA"+channelNo+"CTL: 0x" + Utils.hex(ctl,4));
+                if (DEBUG) {
+                    //log ("DMA"+channelNo+"CTL: 0x" + Utils.hex(ctl,4));
+                }
                 return ctl;
             case DMAxSAlow:
                 return sourceAddress & 0xFFFF;
@@ -219,10 +233,13 @@ public class DMAxv2 extends IOUnit {
             if (enable) {
                 int data = cpu.currentSegment.read(currentSourceAddress, Memory.AccessMode.BYTE, Memory.AccessType.READ);
                 //data = cpu.memory[currentSourceAddress];
-                if (DEBUG) log("DMA ch. " + channelNo + " Triggered transfer from: $" +
+                if (DEBUG) 
+                    /*
+                    log("DMA ch. " + channelNo + " Triggered transfer from: $" +
                         Utils.hex(currentSourceAddress, 5) + " : 0x" + Utils.hex(data,2) + " " + (data < 32? '.' : (char) data) + " to $" +
                         Utils.hex(currentDestinationAddress, 5) + 
                         " size:" + (storedSize - ( size - 1) )+ "/" + storedSize + " index:" + index);
+                    */
                 // flag already cleared by the memory read above
 //                trigger.clearDMAxv2Trigger(index);
                 DMAxv2.this.cpu.currentSegment.write(currentDestinationAddress, data, Memory.AccessMode.BYTE);
@@ -237,7 +254,9 @@ public class DMAxv2 extends IOUnit {
                     if ((transferMode & 0x04) == 0) {
                         enable = false;
                         ctl &= ~0x0010;
-                        if (DEBUG) log("DMA ch. " + channelNo + " EoT: end of transfer with IV: 0x" + Utils.hex(dmaIV,4));
+                        if (DEBUG) {
+                            //log("DMA ch. " + channelNo + " EoT: end of transfer with IV: 0x" + Utils.hex(dmaIV,4));
+                        }
                     }
                     /* flag interrupt and update interrupt vector */
                     dmaIFG = true;
@@ -327,7 +346,7 @@ public class DMAxv2 extends IOUnit {
     public void interruptServiced(int vector) {
       if (MSP430Core.debugInterrupts) {
         log(getName() + " >>>> interrupt Serviced for channel: " + (dmaIV/2 - 1) + 
-            " at cycles: " + cpu.cycles + " <<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<<");
+            " at cycles: " + cpu.cycles + " <<<");
       }
     }
 
@@ -335,13 +354,13 @@ public class DMAxv2 extends IOUnit {
     public void write(int address, int value, boolean word, long cycles) {
         if (DEBUG) {
             if (address >= offset + DMA_BLOCK_CONTROL + 1 && address < offset + DMA_BLOCK_CHANNEL0) {
-                System.err.println("DMA debug ------------ $0x" + Utils.hex(address-(offset + DMA_BLOCK_CONTROL), 5) + ": 0x" + Utils.hex(value, 5) + "------------------------- @" + cpu.getTimeMillis());
+                log("DMA debug --- $0x" + Utils.hex(address-(offset + DMA_BLOCK_CONTROL), 5) + ": 0x" + Utils.hex(value, 5) + "--- @" + cpu.getTimeMillis());
             }
             else if (address < offset + DMA_BLOCK_CHANNEL0  || address >= offset + DMA_BLOCK_CHANNEL2) {
-                System.err.println("DMA debug -----+------ $0x" + Utils.hex(address-(offset + DMA_BLOCK_CHANNEL2), 5) + ": 0x" + Utils.hex(value, 5));
+                log("DMA debug -+- $0x" + Utils.hex(address-(offset + DMA_BLOCK_CHANNEL2), 5) + ": 0x" + Utils.hex(value, 5));
             }
             else {
-                log("DMA write to: $0x" + Utils.hex(address, 4) + ": 0x" + Utils.hex(value, 4));
+                //log("DMA write to: $0x" + Utils.hex(address, 4) + ": 0x" + Utils.hex(value, 4));
             }
         }
         address -= offset;
@@ -382,8 +401,8 @@ public class DMAxv2 extends IOUnit {
     }
 
     public int read(int address, boolean word, long cycles) {
-        if (true || DEBUG) {
-            log("DMA read from: $0x" + Utils.hex(address, 4));
+        if (DEBUG) {
+            //log("DMA read from: $0x" + Utils.hex(address, 4));
         }
         
         address -= offset;

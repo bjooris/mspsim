@@ -31,7 +31,7 @@
  *
  * CC2520
  *
- * Author  : Joakim Eriksson, Niclas Finne
+ * Author  : Joakim Eriksson, Niclas Finne, Bart Jooris
  */
 
 package se.sics.mspsim.chip;
@@ -45,31 +45,28 @@ import se.sics.mspsim.util.Utils;
 public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     
     private static final boolean DEBUG = true;
-    private static final boolean TAISC_DEBUG = true;
 
     public class GPIO {
         private IOPort port;
         public int pin;
-        private int gpiof = GPIO_CFG_DUMMY;
+        public int gpiof = GPIO_CFG_DUMMY;
         
         boolean polarity = true;
         boolean isActive;
 
         public void setConfig(IOPort port, int pin) {
-            log("setConfig ------------------------------------------------- " + pin);
+            log("setConfig ---" + pin);
             this.port = port;
             this.pin = pin;
             port.setPinState(pin, isActive == polarity ? IOPort.PinState.HI : IOPort.PinState.LOW);
         }
 
         public void assign(int gpiof) {
-            //restore to dummy
-            //vgpio[this.gpiof] = dummyGpio;
-            //this.gpiof = GPIO_CFG_DUMMY;
-            //reassign
             vgpio[gpiof] = this;
             this.gpiof = gpiof;
-            log("gpio: reconfigured: 0x" + Utils.hex(gpiof,2));
+            if (DEBUG) {
+                //log("gpio: reconfigured: 0x" + Utils.hex(gpiof,2) + " @ " + vgpio[gpiof]);
+            }
         }
         
         public boolean isActive() {
@@ -77,7 +74,9 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         }
 
         public void setActive(boolean isActive) {
-            log("GPIO at port :" + (port ==null? "xxxx" :port.getName()) + " pin: " + pin + " f: 0x" + Utils.hex(gpiof,2) + " v: " + isActive);
+            if (DEBUG) {
+                //log("GPIO at port : " + (port ==null? "xxxx" :port.getName()) + " pin: " + pin + " f: 0x" + Utils.hex(gpiof,2) + " v: " + isActive);
+            }
             if (this.isActive != isActive) {
                 this.isActive = isActive;
                 if (port != null) {
@@ -99,11 +98,15 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     public  class dummyGPIO extends GPIO{
         @Override 
         public void setActive(boolean isActive) {
-            System.err.println("setActDum ------------------------------------------------- " + pin);
+            if (DEBUG) {
+                log("setActDum ---" + pin + " " + Utils.hex(gpiof,2));
+            }
         }
         @Override 
         public void setPolarity(boolean polarity) {
-            System.err.println("setPolDum ------------------------------------------------- " + pin);
+            if (DEBUG) {
+                log("setPolDum ---" + pin + " " + Utils.hex(gpiof,2));
+            }
         }        
     }
     
@@ -450,6 +453,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     private boolean txfifoFlush;  // TXFIFO is automatically flushed on next write
     private int rxfifoReadLeft;   // number of bytes left to read from current packet
     private int rxlen;
+    private int txCnt;
     private int rxread;
     private int zeroSymbols;
 
@@ -505,7 +509,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     private final GPIO[] gpio = new GPIO[6];
     
     //implemented GPIO functionality but virtual
-    private static GPIO[] vgpio = new GPIO[GPIO_CFG_MAX];
+    private GPIO[] vgpio = new GPIO[GPIO_CFG_MAX];
 
     private boolean currentFIFO;
     private boolean currentFIFOP;
@@ -679,8 +683,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         memory[REG_GPIOPOLARITY] = 0x3f;
         updateGPIOConfig();
 
-        GPIO dummyGP = new dummyGPIO();
-        Arrays.fill(vgpio, dummyGP);
+        Arrays.fill(vgpio, dummyGpio);
 
         gpio[0].assign(GPIO_CFG_O_CLOCK);
         gpio[1].assign(GPIO_CFG_O_FIFO);
@@ -751,6 +754,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             break;
 
         case TX_PREAMBLE:
+            txCnt = 0;
             shrPos = 0;
             SHR[0] = 0;
             SHR[1] = 0;
@@ -879,7 +883,9 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
                     if (rxread == 0) {
                         rxCrc.setCRC(0);
                         rxlen = data & 0xff;
-                        //System.out.println("Starting to get packet at: " + rxfifoWritePos + " len = " + rxlen);
+                        if (DEBUG) {
+                            //log("Starting to get packet at: " + rxfifoWritePos + " len = " + rxlen);
+                        }
                         decodeAddress = frameFilter;
                         if (DEBUG) log("RX: Start frame length " + rxlen);
                         // FIFO pin goes high after length byte is written to RXFIFO
@@ -980,7 +986,9 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
                     // In RX mode, FIFOP goes high, if threshold is higher than frame length....
 
                     // Here we check the CRC of the packet!
-                    //System.out.println("Reading from " + ((rxfifoWritePos + 128 - 2) & 127));
+                    if (DEBUG) {
+                        //log("Reading from " + ((rxfifoWritePos + 128 - 2) & 127));
+                    }
                     if (autoCRC) {
                         int crc = rxFIFO.get(-2) << 8;
                         crc += rxFIFO.get(-1); //memory[RAM_RXFIFO + ((rxfifoWritePos + 128 - 1) & 127)];
@@ -1024,7 +1032,9 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
 
     /* API used in CC2520 SPI for both memory and registers */
     void writeMemory(int address, int data) {
-//        System.out.printf("CC2520: writing to %x => %x\n", address, data);
+        if (DEBUG) {
+            //log("CC2520: writing to " + Utils.hex(address,5) + " => " + Utils.hex(address,4));
+        }
         int oldValue = memory[address];
         memory[address] = data;
         switch(address) {
@@ -1095,7 +1105,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     public void dataReceived(USARTSource source, int data) {
         uartSource = source;
         outputSPI = status; /* if nothing replace the outputSPI it will be output */
-        if (DEBUG && TAISC_DEBUG) {
+        if (DEBUG) {
             log("byte received: 0x" + Utils.hex8(data) +
                     " (" + ((data >= ' ' && data <= 'Z') ? (char) data : '.') + ')' +
                     " CS: " + chipSelect + " SPI(0x" + Utils.hex(spiLen,4) + "): " + (command == null ? "<waiting>" : command.name)
@@ -1140,7 +1150,9 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         if (command != null) {
             command.dataReceived(data);
             if (spiLen == command.commandLen) {
-//                System.out.println("CC2520 Executing command: " + command.name);
+                if (DEBUG) {
+                    //log("CC2520 Executing command: " + command.name);
+                }
                 command.executeSPICommand();
                 command = null;
                 spiLen = 0;
@@ -1232,6 +1244,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     }
 
     private void shrNext() {
+        txCnt ++;
         if(shrPos == 5) {
             // Set SFD high
             setSFD(true);
@@ -1246,7 +1259,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             }
         } else {
             if (rfListener != null) {
-                if (DEBUG) log("transmitting byte: " + Utils.hex8(SHR[shrPos]));
+                if (DEBUG) log("transmitting byte SHR: ["+ txCnt +"] "+ Utils.hex8(SHR[shrPos])  + " @ " + cpu.getTimeMillis());
                 rfListener.receivedByte(SHR[shrPos]);
             }
             shrPos++;
@@ -1255,6 +1268,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     }
 
     private void txNext() {
+        txCnt ++;
         if(txfifoPos <= memory[RAM_TXFIFO]) {
             int len = memory[RAM_TXFIFO] & 0xff;
             
@@ -1273,7 +1287,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
                 logw(WarningType.EXECUTION, "**** Warning - packet size too large - repeating packet bytes txfifoPos: " + txfifoPos);
             }
             if (rfListener != null) {
-                if (DEBUG) log("transmitting byte: " + Utils.hex8(memory[RAM_TXFIFO + (txfifoPos & 0x7f)] & 0xFF));
+                if (DEBUG) log("transmitting byte PAY:  ["+ txCnt +"] "+ Utils.hex8(memory[RAM_TXFIFO + (txfifoPos & 0x7f)] & 0xFF) + " @ " + cpu.getTimeMillis());
                 rfListener.receivedByte((byte)(memory[RAM_TXFIFO + (txfifoPos & 0x7f)] & 0xFF));
             }
             txfifoPos++;
@@ -1381,7 +1395,9 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             txCursor = 0;
             txfifoFlush = false;
         }
-        if (DEBUG) log("Writing data: " + data + " to tx: " + txCursor);
+        if (DEBUG) {
+            //log("Writing data: " + data + " to tx: " + txCursor);
+        }
 
         if(txCursor == 0) {
             if ((data & 0xff) > 127) {
@@ -1431,13 +1447,19 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     }
 
     private void setSFD(boolean sfd) {
+        if (DEBUG) {
+            log("sfdid=" + GPIO_CFG_O_SFD + " v: " + sfd + " @ " + vgpio[GPIO_CFG_O_SFD] + " " + vgpio[GPIO_CFG_O_SFD].gpiof + " " + this); //vgpio[GPIO_CFG_O_SFD].getClass().getCanonicalName());
+        }
+
         vgpio[GPIO_CFG_O_SFD].setActive(sfd);
         if (sfd) {
             memory[REG_FSMSTAT1] |= 1 << 5;
         } else {
             memory[REG_FSMSTAT1] &= ~(1 << 5);
         }
-        System.err.println("SFD: " + sfd + "**************************************************  " + cpu.getTimeMillis());
+        if (DEBUG) {
+            log("SFD: " + sfd + " @ " + cpu.getTimeMillis());
+        }
     }
 
     private void setFIFOP(boolean fifop) {
@@ -1533,7 +1555,9 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             power = maxp;
         }
 
-        if (DEBUG) log("external setRSSI to: " + power);
+        if (DEBUG) {
+            //log("external setRSSI to: " + power);
+        }
 
         rssi = power;
         memory[REG_RSSI] = power - RSSI_OFFSET;
@@ -1685,8 +1709,8 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             }
         }
 
-        if (DEBUG /*&& TAISC_DEBUG*/) {
-            log("ResetPin: " + reset + "-----------------------------------------------------------------");
+        if (DEBUG) {
+            log("ResetPin: " + reset);
         }
     }
     
@@ -1700,9 +1724,8 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             command = null;
         }
 
-        if (DEBUG /*&& TAISC_DEBUG*/) {
-            log("ChipSelect: " + chipSelect + "-----------------------------------------------------------------");
-            System.err.println("ChipSelect: " + chipSelect + "-----------------------------------------------------------------");
+        if (DEBUG) {
+            log("ChipSelect: " + chipSelect );
         }
     }
 

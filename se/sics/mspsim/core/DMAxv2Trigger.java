@@ -1,3 +1,8 @@
+/**
+ * @author Bart Jooris
+ */
+
+
 package se.sics.mspsim.core;
 
 public interface DMAxv2Trigger {

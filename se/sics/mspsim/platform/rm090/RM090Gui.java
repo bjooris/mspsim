@@ -46,6 +46,7 @@ import se.sics.mspsim.platform.AbstractNodeGUI;
 /**
  * @author Niclas Finne
  * @author Floris Van den Abeele
+ * @author Bart Jooris
  */
 public class RM090Gui extends AbstractNodeGUI {
 
