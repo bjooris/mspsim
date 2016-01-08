@@ -368,6 +368,9 @@ public class RM090Node extends GenericNode implements PortListener, USARTListene
                 SerialMon serial = new SerialMon((USARTSource)usart, "USCI A1 Port Output");
                 registry.registerComponent("serialgui", serial);
             }
+            else {
+				throw new EmulationException("Could not setup rm090 mote - missing USCIA1");
+            }
         }
     }
 

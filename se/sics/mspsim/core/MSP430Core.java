@@ -37,6 +37,8 @@
 
 package se.sics.mspsim.core;
 import java.io.PrintStream;
+import java.io.StringWriter;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 
 import se.sics.mspsim.core.EmulationLogger.WarningType;
@@ -55,7 +57,7 @@ public class MSP430Core extends Chip implements MSP430Constants {
 
   public static final int RETURN = 0x4130;
 
-  public static final boolean debugInterrupts = false;
+  public static final boolean debugInterrupts = true;
 
   public static final boolean EXCEPTION_ON_BAD_OPERATION = true;
 
@@ -693,7 +695,7 @@ public class MSP430Core extends Chip implements MSP430Constants {
       }
       /* Warn if someone schedules a time backwards in time... */
       if (cycles > nextVTimeEventCycles) {
-        logger.logw(this, WarningType.EMULATION_ERROR, "Scheduling time event backwards in time!!!");
+        logger.logw(this, WarningType.EXECUTION, "Scheduling time event backwards in time!!!");
         throw new IllegalStateException("Cycles are passed desired future time...");
       }
     }
@@ -798,9 +800,12 @@ public class MSP430Core extends Chip implements MSP430Constants {
 
       if (debugInterrupts) {
         if (source != null) {
-          System.out.println("### Interrupt " + interrupt  + " flagged ON by " + source.getName() + " prio: " + interrupt);
+          	logger.logw(this, WarningType.EXECUTION, "### Interrupt " + interrupt  + " flagged ON by " + source.getName() + " prio: " + interrupt);
         } else {
-          System.out.println("### Interrupt " + interrupt + " flagged ON by <null>");
+          	System.out.println(/*this, WarningType.EXECUTION, */ "### Interrupt " + interrupt + " flagged ON by <null>");
+			StringWriter sw = new StringWriter();
+			new Throwable().printStackTrace(new PrintWriter(sw));
+			System.out.println(/*this, WarningType.EXECUTION, */sw.toString());
         }
       }
 
@@ -816,7 +821,7 @@ public class MSP430Core extends Chip implements MSP430Constants {
     } else {
       if (interruptSource[interrupt] == source) {
         if (debugInterrupts) {
-          System.out.println("### Interrupt flagged OFF by " + source.getName() + " prio: " + interrupt);
+          	logger.logw(this, WarningType.EXECUTION, "### Interrupt flagged OFF by " + source.getName() + " prio: " + interrupt);
         }
         interruptSource[interrupt] = null;
         reevaluateInterrupts();
@@ -893,6 +898,14 @@ public class MSP430Core extends Chip implements MSP430Constants {
     int spBefore = readRegister(SP);
     int sp = spBefore;
     int sr = readRegister(SR);
+
+    if (debugInterrupts) {
+		//logger.logw(this, WarningType.EXECUTION,  
+		System.out.println(
+				"===========> Executing interrupt: " + servicedInterrupt + 
+				" interruptMax: " + interruptMax 
+		);
+    }
     
     if (profiler != null) {
       profiler.profileInterrupt(interruptMax, cycles);
@@ -920,6 +933,13 @@ public class MSP430Core extends Chip implements MSP430Constants {
 
     // Jump to the address specified in the interrupt vector
     pc = currentSegment.read(0xfffe - (MAX_INTERRUPT - interruptMax) * 2, AccessMode.WORD, AccessType.READ);
+	if (pc == 0) {
+		StringWriter sw = new StringWriter();
+		new Throwable().printStackTrace(new PrintWriter(sw));
+		logger.logw( this, WarningType.EXECUTION, sw.toString());
+	}
+    
+    
     writeRegister(PC, pc);
 
     servicedInterrupt = interruptMax;
@@ -939,7 +959,10 @@ public class MSP430Core extends Chip implements MSP430Constants {
     cycles += 6;
 
     if (debugInterrupts) {
-      System.out.println("### Executing interrupt: " +
+      		//logger.logw(this, WarningType.EXECUTION, 
+			System.out.println(
+
+      		"### Executing interrupt: " +
 			 servicedInterrupt + " at 0x"
 			 + Utils.hex(pcBefore,5) + " to 0x" + Utils.hex(pc,5) +
 			 " SP before: 0x" + Utils.hex(spBefore,5) +
@@ -949,7 +972,7 @@ public class MSP430Core extends Chip implements MSP430Constants {
     // And call the serviced routine (which can cause another interrupt)
     if (servicedInterruptUnit != null) {
       if (debugInterrupts) {
-        System.out.println("### Calling serviced interrupt on: " +
+        	logger.logw(this, WarningType.EXECUTION, "### Calling serviced interrupt on: " +
                            servicedInterruptUnit.getName());
       }
       servicedInterruptUnit.interruptServiced(servicedInterrupt);
@@ -2128,7 +2151,7 @@ public class MSP430Core extends Chip implements MSP430Constants {
               break;
           default:
               String address = getAddressAsString(pc);
-              logw(WarningType.EMULATION_ERROR, 
+              logw(WarningType.EXECUTION, 
                       "DoubleOperand not implemented: op = " + Integer.toHexString(op) + " at " + address);
               if (EXCEPTION_ON_BAD_OPERATION) {
                   EmulationException ex = new EmulationException("Bad operation: $" + Integer.toHexString(op) + " at $" + address);
