@@ -57,7 +57,7 @@ public class MSP430Core extends Chip implements MSP430Constants {
 
   public static final int RETURN = 0x4130;
 
-  public static final boolean debugInterrupts = true;
+  public static final boolean debugInterrupts = false ;
 
   public static final boolean EXCEPTION_ON_BAD_OPERATION = true;
 
@@ -483,7 +483,7 @@ public class MSP430Core extends Chip implements MSP430Constants {
       boolean oldCpuOff = cpuOff;
       if (debugInterrupts) {
           if (((value & GIE) == GIE) != interruptsEnabled) {
-              System.out.println("InterruptEnabled changed: " + !interruptsEnabled + " PC: $" + getAddressAsString(reg[PC]));
+              log("InterruptEnabled changed: " + !interruptsEnabled + " PC: $" + getAddressAsString(reg[PC]));
           }
       }
       boolean oldIE = interruptsEnabled;
@@ -646,6 +646,7 @@ public class MSP430Core extends Chip implements MSP430Constants {
       if (cycleEventQueue.eventCount == 0) {
         nextCycleEventCycles = cycles + 10000;
       } else {
+		  //~ cycleEventQueue.print(System.out);
         TimeEvent te = cycleEventQueue.popFirst();
         te.execute(cycles);
         if (cycleEventQueue.eventCount > 0) {
@@ -746,8 +747,8 @@ public class MSP430Core extends Chip implements MSP430Constants {
   public <T> T getIOUnit(Class<T> type, String name) {
       for (IOUnit ioUnit : ioUnits) {
           if (type.isInstance(ioUnit)
-                  && (name.equalsIgnoreCase(ioUnit.getID())
-                          || name.equalsIgnoreCase(ioUnit.getName()))) {
+                  && (name.replaceAll("\\s+","").equalsIgnoreCase(ioUnit.getID())
+                          || name.replaceAll("\\s+","").equalsIgnoreCase(ioUnit.getName()))) {
               return type.cast(ioUnit);
           }
       }
@@ -983,6 +984,7 @@ public class MSP430Core extends Chip implements MSP430Constants {
   /* returns true if any instruction was emulated - false if CpuOff */
   public int emulateOP(long maxCycles) throws EmulationException {
     //System.out.println("CYCLES BEFORE: " + cycles);
+    //~ log("EMULATE CYCLE " + interruptsEnabled + " " + servicedInterrupt + " " + interruptMax);
     int pc = readRegister(PC);
     long startCycles = cycles;
     
@@ -990,6 +992,7 @@ public class MSP430Core extends Chip implements MSP430Constants {
     // Interrupt processing [after the last instruction was executed]
     // -------------------------------------------------------------------
     if (interruptsEnabled && servicedInterrupt == -1 && interruptMax >= 0) {
+    //~ log("EMULATE INTERRUPT");
       pc = serviceInterrupt(pc);
     }
 

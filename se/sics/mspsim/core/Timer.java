@@ -704,7 +704,7 @@ public class Timer extends IOUnit {
         int port = (src & 0xff) >> 4;
         int pin = src & 0x0f;
         IOPort ioPort = cpu.getIOUnit(IOPort.class, "P" + port);
-        if (DEBUG) log("Assigning Port: " + port + " pin: " + pin +
+        log("Assigning Port: " + port + " pin: " + pin +
             " for capture");
         ioPort.setTimerCapture(this, pin);
       }
