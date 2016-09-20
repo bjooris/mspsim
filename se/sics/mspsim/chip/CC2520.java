@@ -44,7 +44,7 @@ import se.sics.mspsim.util.Utils;
 
 public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     public class GPIO {
         private IOPort port;
@@ -851,7 +851,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     public void receivedByte(byte data) {
         // Received a byte from the "air"
 
-        if (DEBUG)
+        if (DEBUG | true)
             log("RF Byte received: " + Utils.hex8(data) + " state: " + stateMachine + " noZeroes: " + zeroSymbols +
                     ((stateMachine == RadioState.RX_SFD_SEARCH || stateMachine == RadioState.RX_FRAME) ? "" : " *** Ignored"));
 
@@ -1130,7 +1130,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             command = cc2520SPI.getCommand(data);
             if (command == null) {
                 logw(WarningType.EMULATION_ERROR, "**** Warning - not implemented command on SPI: " + data);
-            } else if (DEBUG) {
+            } else if (DEBUG | true) {
                 if (!"SNOP".equals(command.name)) {
                     log("SPI command: " + command.name);
                 }
@@ -1287,7 +1287,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
                 logw(WarningType.EXECUTION, "**** Warning - packet size too large - repeating packet bytes txfifoPos: " + txfifoPos);
             }
             if (rfListener != null) {
-                if (DEBUG) log("transmitting byte PAY:  ["+ txCnt +"] "+ Utils.hex8(memory[RAM_TXFIFO + (txfifoPos & 0x7f)] & 0xFF) + " @ " + cpu.getTimeMillis());
+                if (DEBUG | true) log("transmitting byte PAY:  ["+ txCnt +"] "+ Utils.hex8(memory[RAM_TXFIFO + (txfifoPos & 0x7f)] & 0xFF) + " @ " + cpu.getTimeMillis());
                 rfListener.receivedByte((byte)(memory[RAM_TXFIFO + (txfifoPos & 0x7f)] & 0xFF));
             }
             txfifoPos++;
