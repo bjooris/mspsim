@@ -253,7 +253,7 @@ public class DMAxv2 extends IOUnit {
             if (enable) {
                 int data = cpu.currentSegment.read(currentSourceAddress, Memory.AccessMode.BYTE, Memory.AccessType.READ);
                 //data = cpu.memory[currentSourceAddress];
-                if (DEBUG) 
+                if (DEBUG && false) 
                     log("DMA ch. " + channelNo + " Triggered transfer from: $" +
                         Utils.hex(currentSourceAddress, 5) + " : 0x" + Utils.hex(data,2) + " " + (data < 32? '.' : (char) data) + " to $" +
                         Utils.hex(currentDestinationAddress, 5) + 
@@ -370,12 +370,12 @@ public class DMAxv2 extends IOUnit {
 
     
     public void write(int address, int value, boolean word, long cycles) {
-        if (DEBUG) {
+        if (DEBUG || true) {
             if (address >= offset + DMA_BLOCK_CONTROL + 1 && address < offset + DMA_BLOCK_CHANNEL0) {
-                log("DMA debug --- $0x" + Utils.hex(address-(offset + DMA_BLOCK_CONTROL), 5) + ": 0x" + Utils.hex(value, 5) + "--- @" + cpu.getTimeMillis());
+                log("DMA Debug --- $0x" + Utils.hex(address-(offset + DMA_BLOCK_CONTROL), 5) + ": 0x" + Utils.hex(value, 5) + "--- @" + cpu.getTimeMillis());
             }
             else if (address < offset + DMA_BLOCK_CHANNEL0  || address >= offset + DMA_BLOCK_CHANNEL2) {
-                log("DMA debug -+- $0x" + Utils.hex(address-(offset + DMA_BLOCK_CHANNEL2), 5) + ": 0x" + Utils.hex(value, 5));
+                log("DMA DEbug -+- $0x" + Utils.hex(address-(offset + DMA_BLOCK_CHANNEL2), 5) + ": 0x" + Utils.hex(value, 5));
             }
             else {
                 //log("DMA write to: $0x" + Utils.hex(address, 4) + ": 0x" + Utils.hex(value, 4));

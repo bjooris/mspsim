@@ -61,7 +61,7 @@ public abstract class Chip implements Loggable, EventSource {
   private int mode;
   private int chipState;
   protected EmulationLogger logger;
-  protected boolean DEBUG = false;
+  protected boolean DEBUG = true;
   protected int logLevel;
 
   public Chip(String id, MSP430Core cpu) {
