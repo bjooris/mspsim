@@ -8,6 +8,7 @@ package se.sics.mspsim.core;
 import se.sics.mspsim.core.EmulationLogger.WarningType;
 import se.sics.mspsim.util.Utils;
 import se.sics.mspsim.profiler.SimpleProfiler;
+import java.util.Scanner;
 
 public class DMAxv2 extends IOUnit {
 
@@ -149,62 +150,69 @@ public class DMAxv2 extends IOUnit {
                 boolean clearingIFG = dmaIFG && ((data & IFG_MASK) == 0);
                 dmaIFG = (data & IFG_MASK) > 0; /* bit 3 */
                 dmaIE = (data & 0x04) > 0; /* bit 2 */
-                //~ if (DEBUG) {
+                if (DEBUG) {
                     log("------------------> DMA Ch." + channelNo + ": conf srcInc: " + srcIncr + " dstInc:" + dstIncr
                         + " en: " + enable + " srcB:" + srcByteMode + " dstB:" + dstByteMode + " lvl: " + dmaLevel +
                         " transMode: " + transferMode + " ie:" + dmaIE + " ifg:" + dmaIFG + " (" + sourceAddress + ", " + destinationAddress + ")");
                     
-                //~ }
+                }
                 if (dmaIE && clearingIFG) {                
                         resetDMAIV();
                 }
                 if (dmaIFG & dmaIE) {
                     triggerInterrupt();
                 }
-                if (enabling) {
-                    if ((trigger != null) && (trigger instanceof DMAxv2Trigger) && ((DMAxv2Trigger)trigger).getDMATriggerState(triggerIndex)) {
-                        trigger(trigger, triggerIndex);
-                    }
-                }
-                
+				if (enabling) {
+					if ((trigger != null) && (trigger instanceof DMAxv2Trigger) && ((DMAxv2Trigger)trigger).getDMATriggerState(triggerIndex)) {
+						trigger(trigger, triggerIndex);
+					}
+				}
                 break;
             case DMAxSAlow:
                 sourceAddress &= ~(0xFFFF);
                 sourceAddress |= ( data & 0xFFFF);
                 currentSourceAddress = sourceAddress;
-                log("------------------> Setting DMA " + channelNo + " sourceL to " + currentSourceAddress + " (" + data + ")");
-                if(sourceAddress == 0) {
-					System.out.println("----------------------------");
+				log("DMA Ch." + channelNo + " LO sourceAddress : " + Utils.hex(sourceAddress,8) + " : " + Utils.hex(data,8)  );         
+                if ((data == 0) && (destinationAddress !=0 ) ) {
 					cpu.profiler.printStackTrace(System.out);
-					System.out.println("++++++++++++++++++++++++++++");
+					//System.out.println(Thread.currentThread().getStackTrace());
+					for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
+						System.out.println(ste);
+					}
+					new Scanner(System.in).nextLine();
 				}
                 break;
             case DMAxSAhigh:
                 sourceAddress &= 0xFFFF;
                 sourceAddress |= (( data & 0xFFFF) << 16);
                 currentSourceAddress = sourceAddress;
-                log("------------------> Setting DMA " + channelNo + " sourceH to " + currentSourceAddress + " (" + data + ")");
-                if(sourceAddress == 0) {
-					System.out.println("----------------------------");
+                if (data == 0) {
 					cpu.profiler.printStackTrace(System.out);
-					System.out.println("++++++++++++++++++++++++++++");
 				}
+				log("DMA Ch." + channelNo + " HI sourceAddress : " + Utils.hex(sourceAddress,8) + " : " + Utils.hex(data,8)  );         
+                break;
             case DMAxDAlow:
                 destinationAddress &= ~(0xFFFF);
                 destinationAddress |= ( data & 0xFFFF);
                 currentDestinationAddress = destinationAddress;
-                log("------------------> Setting DMA " + channelNo + " destinH to " + currentDestinationAddress);
+                if (data == 0) {
+					cpu.profiler.printStackTrace(System.out);
+				}
+				log("DMA Ch." + channelNo + " LO destinationAddress : " + Utils.hex(destinationAddress,8) + " : " + Utils.hex(data,8)  );         
                 break;
             case DMAxDAhigh:
                 destinationAddress &= (0xFFFF);
                 destinationAddress |= (( data & 0xFFFF) << 16);
                 currentDestinationAddress = destinationAddress;
-                log("------------------> Setting DMA " + channelNo + " destinL to " + currentDestinationAddress);
+                if (data == 0) {
+					cpu.profiler.printStackTrace(System.out);
+				}
+				log("DMA Ch." + channelNo + " HI destinationAddress : " + Utils.hex(destinationAddress,8) + " : " + Utils.hex(data,8)  );         
                 break;
             case DMAxSZ:
                 size = data;
                 storedSize = data;
-                log("------------------> Setting DMA " + channelNo + " size to " + size);
+				log("DMA Ch." + channelNo + " Size : " + Utils.hex(size,8) );         
                 break;
             }
             
@@ -248,13 +256,11 @@ public class DMAxv2 extends IOUnit {
 				log("------------------> DMA ch. " + channelNo + " Triggered transfer");
                 int data = cpu.currentSegment.read(currentSourceAddress, Memory.AccessMode.BYTE, Memory.AccessType.READ);
                 //data = cpu.memory[currentSourceAddress];
-                if (DEBUG) 
-                    /*
+                if (DEBUG && false) 
                     log("DMA ch. " + channelNo + " Triggered transfer from: $" +
                         Utils.hex(currentSourceAddress, 5) + " : 0x" + Utils.hex(data,2) + " " + (data < 32? '.' : (char) data) + " to $" +
                         Utils.hex(currentDestinationAddress, 5) + 
                         " size:" + (storedSize - ( size - 1) )+ "/" + storedSize + " index:" + index);
-                    */
                 // flag already cleared by the memory read above
 //                trigger.clearDMAxv2Trigger(index);
                 DMAxv2.this.cpu.currentSegment.write(currentDestinationAddress, data, Memory.AccessMode.BYTE);
@@ -270,7 +276,7 @@ public class DMAxv2 extends IOUnit {
                         enable = false;
                         ctl &= ~0x0010;
                         if (DEBUG) {
-                            //log("DMA ch. " + channelNo + " EoT: end of transfer with IV: 0x" + Utils.hex(dmaIV,4));
+                            log("DMA ch. " + channelNo + " EoT: end of transfer with IV: 0x" + Utils.hex(dmaIV,4));
                         }
                     }
                     /* flag interrupt and update interrupt vector */
@@ -367,12 +373,12 @@ public class DMAxv2 extends IOUnit {
 
     
     public void write(int address, int value, boolean word, long cycles) {
-        if (DEBUG) {
+        if (DEBUG || true) {
             if (address >= offset + DMA_BLOCK_CONTROL + 1 && address < offset + DMA_BLOCK_CHANNEL0) {
-                log("DMA debug --- $0x" + Utils.hex(address-(offset + DMA_BLOCK_CONTROL), 5) + ": 0x" + Utils.hex(value, 5) + "--- @" + cpu.getTimeMillis());
+                log("DMA Debug --- $0x" + Utils.hex(address-(offset + DMA_BLOCK_CONTROL), 5) + ": 0x" + Utils.hex(value, 5) + "--- @" + cpu.getTimeMillis());
             }
             else if (address < offset + DMA_BLOCK_CHANNEL0  || address >= offset + DMA_BLOCK_CHANNEL2) {
-                log("DMA debug -+- $0x" + Utils.hex(address-(offset + DMA_BLOCK_CHANNEL2), 5) + ": 0x" + Utils.hex(value, 5));
+                log("DMA DEbug -+- $0x" + Utils.hex(address-(offset + DMA_BLOCK_CHANNEL2), 5) + ": 0x" + Utils.hex(value, 5));
             }
             else {
                 //log("DMA write to: $0x" + Utils.hex(address, 4) + ": 0x" + Utils.hex(value, 4));

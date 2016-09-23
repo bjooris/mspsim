@@ -55,7 +55,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         boolean isActive;
 
         public void setConfig(IOPort port, int pin) {
-            log("setConfig ---" + pin);
+            if (DEBUG) log("setConfig ---" + pin);
             this.port = port;
             this.pin = pin;
             port.setPinState(pin, isActive == polarity ? IOPort.PinState.HI : IOPort.PinState.LOW);
@@ -833,9 +833,12 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         return true;
     }
 
-    private void rejectFrame() {
+    private void rejectFrame(String s) {
         // Immediately jump to SFD Search again... something more???
         /* reset state */
+        if (DEBUG) {
+			log("frame was rejected due to : " + s);
+		}
         rxFIFO.restore();
         setSFD(false);
         setFIFO(rxFIFO.length() > 0);
@@ -884,7 +887,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
                         rxCrc.setCRC(0);
                         rxlen = data & 0xff;
                         if (DEBUG) {
-                            //log("Starting to get packet at: " + rxfifoWritePos + " len = " + rxlen);
+                            log("Starting to get packet at: " + rxFIFO.length() + " len = " + rxlen);
                         }
                         decodeAddress = frameFilter;
                         if (DEBUG) log("RX: Start frame length " + rxlen);
@@ -902,8 +905,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
                             if (frameFilter
                                     && (((getFCFReservedMask() & (((fcf0 & 3) << 1) | (fcf1 & 1))) != 0)
                                             || (getFCFMaxFrameVersion() < ((fcf0 >> 2) & 3)))) {
-                                // Illegal frame version or reserved bits set
-                                rejectFrame();
+                                rejectFrame("Illegal frame version or reserved bits set");
                             } else if (frameType == TYPE_DATA_FRAME) {
                                 ackRequest = (fcf0 & ACK_REQUEST) > 0;
                                 destinationAddressMode = (fcf1 >> 2) & 3;
@@ -912,7 +914,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
                                     if ((destinationAddressMode != LONG_ADDRESS
                                             && destinationAddressMode != SHORT_ADDRESS)
                                             || (memory[REG_FRMFILT1] & ACCEPT_FT_1_DATA) == 0) {
-                                        rejectFrame();
+                                        rejectFrame("Data frame: use of short addresses or NOT accepted by RADIO");
                                     }
                                 }
                             } else if (frameType == TYPE_ACK_FRAME) {
@@ -921,7 +923,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
                                 if (frameFilter) {
                                     if (rxlen != 5
                                             || (memory[REG_FRMFILT1] & ACCEPT_FT_2_ACK) == 0) {
-                                        rejectFrame();
+                                        rejectFrame("ACK frames are NOT accepted by the RADIO or length of frame is NOT 5 (it is " + rxlen + " )" );
                                     }
                                 }
                             } else if (frameType == TYPE_BEACON_FRAME) {
@@ -932,12 +934,12 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
                                     if (rxlen < 9
                                             || (memory[REG_FRMFILT1] & ACCEPT_FT_0_BEACON) == 0
                                             || destinationAddressMode != 0) {
-                                        rejectFrame();
+                                        rejectFrame("Beacon Frame: destination address defined by FCF or NOT NOT accepted by RADIO");
                                     }
                                 }
                             } else if (frameFilter) {
                                 /* illegal frame when decoding address... */
-                                rejectFrame();
+                                rejectFrame("illegal frame when decoding address...");
                             }
                         } else if (rxread == 3) {
                             // save data sequence number
@@ -960,7 +962,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
                                 decodeAddress = false;
                             }
                             if (flushPacket) {
-                                rejectFrame();
+                                rejectFrame("Address decoding filtered the frame");
                             }
                         }
                     }
@@ -1033,7 +1035,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     /* API used in CC2520 SPI for both memory and registers */
     void writeMemory(int address, int data) {
         if (DEBUG) {
-            //log("CC2520: writing to " + Utils.hex(address,5) + " => " + Utils.hex(address,4));
+            log("CC2520: writing to " + Utils.hex(address,5) + " => " + Utils.hex(data,4));
         }
         int oldValue = memory[address];
         memory[address] = data;
@@ -1461,6 +1463,11 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         if (DEBUG) {
             log("SFD: " + sfd + " @ " + cpu.getTimeMillis());
         }
+        if (sfd == false) {
+			for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
+				System.out.println(ste);
+			}
+		}    
     }
 
     private void setFIFOP(boolean fifop) {
