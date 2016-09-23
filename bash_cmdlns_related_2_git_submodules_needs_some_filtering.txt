@@ -1,0 +1,34 @@
+cat .gitmodules 
+git status
+git submodule status
+git submodule update --init --recursive
+git config --list |  grep ^submodule
+git branch -a
+git submodule foreach --recursive git submodule update --init
+git submodule add https://github.com/bjooris/mspsim.git tools/mspsim
+
+git ls-tree
+git submodules list
+git config --get remote.origin.url
+cd ../..
+git rm --cache tools/mspsim/
+git rm -rf tools/mspsim
+git submodule add https://github.com/bjooris/mspsim.git tools/mspsim
+git submodule update --init
+cd tools/mspsim
+git checkout rm090_taisc 
+git rm -rf tools/mspsim
+git submodule update --init
+git submodule update --init --recursive
+cd tools/mspsim
+cat .gitmodules 
+git rm -rf tools/mspsim
+git commit
+git submodule add https://github.com/bjooris/mspsim.git tools/mspsim
+rm -rf .git/modules/tools/mspsim
+git submodule add https://github.com/bjooris/mspsim.git tools/mspsim
+cd tools/mspsim/
+git checkout rm090_taisc 
+git pull
+git branch -a
+git checkout remotes/origin/rm090_taisc
