@@ -44,7 +44,7 @@ import se.sics.mspsim.util.Utils;
 
 public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     public class GPIO {
         private IOPort port;
@@ -1148,6 +1148,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         }
 
         if (command != null) {
+			//~ System.out.println("SPI " + command.name);
             command.dataReceived(data);
             if (spiLen == command.commandLen) {
                 if (DEBUG) {
