@@ -75,7 +75,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
 
         public void setActive(boolean isActive) {
             if (DEBUG) {
-                //log("GPIO at port : " + (port ==null? "xxxx" :port.getName()) + " pin: " + pin + " f: 0x" + Utils.hex(gpiof,2) + " v: " + isActive);
+                log("GPIO at port : " + (port ==null? "xxxx" :port.getName()) + " pin: " + pin + " f: 0x" + Utils.hex(gpiof,2) + " v: " + isActive);
             }
             if (this.isActive != isActive) {
                 this.isActive = isActive;
@@ -724,7 +724,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             status &= ~(STATUS_RSSI_VALID | STATUS_XOSC16M_STABLE);
             memory[REG_RSSISTAT] = 0;
             crcOk = false;
-            reset();
+            //reset();
             setMode(MODE_POWER_OFF);
             updateCCA();
             break;
@@ -1371,6 +1371,9 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         if (DEBUG) log("Oscillator Off.");
         // Reset state
         setFIFOP(false);
+        setFIFO(false);
+        setSFD(false);
+        SOport.setPinState(SOpin, IOPort.PinState.LOW);        
     }
 
     void flushRX() {

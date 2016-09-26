@@ -171,8 +171,26 @@ public class CC2520SPI {
             new SPICommand("MEMCPR 0 1 0 1 0 0 1 p c c c c c c c c a a a a e e e e a a a a a a a a e e e e e e e e"),
             new SPICommand("MEMXCP 0 1 0 1 0 1 0 p c c c c c c c c a a a a e e e e a a a a a a a a e e e e e e e e"),
             new SPICommand("MEMXWR 0 1 0 1 0 1 1 0 0 0 0 0 a a a a a a a a a a a a d d d d d d d d ..."),
-            new SPICommand("BCLR 0 1 0 1 1 0 0 0 a a a a a b b b"),
-            new SPICommand("BSET 0 1 0 1 1 0 0 1 a a a a a b b b"),
+            new SPICommand("BCLR 0 1 0 1 1 0 0 0 a a a a a b b b") {
+                final BitField adr = getBitField("a");
+                final BitField bit = getBitField("b");
+                public void executeSPICommand() {
+					int cAdr = adr.getValue(spiData);
+					int cBit = ~(1 <<  bit.getValue(spiData));
+					//System.out.printf("BCLR EX =>  Value: %x [%x:%x]\n", spiData.getSPIDataLen(), cAdr, cBit);
+                    cc2520.writeMemory(cAdr, cc2520.readMemory(cAdr) & cBit);
+                }
+            },
+            new SPICommand("BSET 0 1 0 1 1 0 0 1 a a a a a b b b") {
+                final BitField adr = getBitField("a");
+                final BitField bit = getBitField("b");
+                public void executeSPICommand() {
+					int cAdr = adr.getValue(spiData);
+					int cBit = 1 <<  bit.getValue(spiData);
+					//System.out.printf("BSET EX =>  Value: %x [%x:%x]\n", spiData.getSPIDataLen(), cAdr, cBit);
+                    cc2520.writeMemory(cAdr, cc2520.readMemory(cAdr) | cBit);
+                }
+            },
             new SPICommand("CTR/UCTR 0 1 1 0 0 0 0 p k k k k k k k k 0 c c c c c c c n n n n n n n n a a a a e e e e a a a a a a a a e e e e e e e e"),
             new SPICommand("CBCMAC 0 1 1 0 0 1 0 p k k k k k k k k 0 c c c c c c c a a a a e e e e a a a a a a a a e e e e e e e e 0 0 0 0 0 mmm"),
             new SPICommand("UCBCMAC 0 1 1 0 0 1 1 p k k k k k k k k 0 c c c c c c c 0 0 0 0 a a a a a a a a a a a a 0 0 0 0 0 mmm"),

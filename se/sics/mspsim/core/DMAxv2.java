@@ -333,7 +333,7 @@ public class DMAxv2 extends IOUnit {
         for (int i = 0; i < channels.length; i++) {
 //            System.out.println("DMA Channel:" + i + " " + channels[i].trigger + " = " + trigger);
             if (channels[i].trigger == trigger && channels[i].triggerIndex == index) {
-                cpu.scheduleCycleEvent(channels[i].triggerEvent,0);
+                cpu.scheduleCycleEvent(channels[i].triggerEvent,2);
             }
         }
     }
