@@ -134,6 +134,8 @@ public class CC2520SPI {
             },
             new SPICommand("SRFOFF 0 1 0 0 0 1 0 1") {
                 public void executeSPICommand() {
+					System.out.printf(cc2520.info());
+                    spiData.outputSPI(cc2520.getStatus());
                     cc2520.rxtxoff();
                 }
             },

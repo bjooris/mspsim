@@ -637,6 +637,11 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         return stateMachine;
     }
 
+    public int getStatus() {
+        return status;
+    }
+
+    
     private int getFCFReservedMask() {
         return (memory[REG_FRMFILT0] >> 4) & 7;
     }
@@ -662,6 +667,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     
     private void reset() {
         // FCF max fram version = 3 and frame filtering enabled
+        if (DEBUG) log("Will RESET the CC2520!");
         memory[REG_FRMFILT0] = 0x0d;
         frameFilter = true;
         memory[REG_FRMFILT1] = 0x78;
