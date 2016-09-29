@@ -266,6 +266,15 @@ public class GenericUSCI extends IOUnit implements DMAxv2Trigger, USARTSource {
               }
           }
           updateBaudRate();
+          if (word == true) {
+            //UxxCTL0 stuff?
+			int dataCtl0 = (data >> 8) & 0xFF;
+			syncMode = (dataCtl0 & 0x01) > 0;
+			i2cEnabled = (dataCtl0 & 0x06) == 0x06;
+			if (DEBUG) log(" write to UxxCTL0 " + dataCtl0);
+		  }
+
+          
           
           /*
            * When in I2C mode and an start or stop condition is reached
@@ -300,7 +309,10 @@ public class GenericUSCI extends IOUnit implements DMAxv2Trigger, USARTSource {
         if (DEBUG) log(" write to UMCTL " + data);
         break;
       case BR0:
-        ubr0 = data;
+        ubr0 = data & 0xFF;
+        if (word) {
+			ubr1 = (data >> 8) & 0x0FF;
+		}
         updateBaudRate();
         break;
       case BR1:
@@ -352,13 +364,14 @@ public class GenericUSCI extends IOUnit implements DMAxv2Trigger, USARTSource {
 
     public int read(int address, boolean word, long cycles) {
         int op = address - offset;
+       // log(" read from " + op );
         switch (op) {
         case CTL0:
             return ctl0;
         case CTL1:
-            return ctl1;
+            return ctl1	| (word? ctl0 << 8 : 0);
         case BR0:
-            return br0;
+            return br0	| (word? br1  << 8 : 0);
         case BR1:
             return br1;
         case TXBUF:
@@ -395,7 +408,7 @@ public class GenericUSCI extends IOUnit implements DMAxv2Trigger, USARTSource {
         case STAT:
             return stat;
         case IE:
-            return ie;
+            return ie | (word? ifg << 8: 0);
         case IFG:
             return ifg;
         case IV:
@@ -424,7 +437,7 @@ public class GenericUSCI extends IOUnit implements DMAxv2Trigger, USARTSource {
     // This needs to be complemented with a method for checking if the USART
     // is ready for next byte (readyForReceive) that respects the current speed
     public void byteReceived(int b) {
-        //System.out.println(getName() + " byte received: " + b);
+        System.out.println(getName() + " byte received: " + b);
 
         if (DEBUG) {
             log("byteReceived: " + b + " " + (char) b);

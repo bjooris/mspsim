@@ -1741,7 +1741,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         }
 
         if (DEBUG) {
-            log("ChipSelect: " + chipSelect );
+            //log("ChipSelect: " + chipSelect );
         }
     }
 

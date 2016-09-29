@@ -149,7 +149,7 @@ public class DMAxv2 extends IOUnit {
                 boolean clearingIFG = dmaIFG && ((data & IFG_MASK) == 0);
                 dmaIFG = (data & IFG_MASK) > 0; /* bit 3 */
                 dmaIE = (data & 0x04) > 0; /* bit 2 */
-                if (DEBUG) {
+                if (DEBUG && false) {
                     log("DMA Ch." + channelNo + ": conf srcInc: " + srcIncr + " dstInc:" + dstIncr
                         + " en: " + enable + " srcB:" + srcByteMode + " dstB:" + dstByteMode + " lvl: " + dmaLevel +
                         " transMode: " + transferMode + " ie:" + dmaIE + " ifg:" + dmaIFG);
@@ -170,7 +170,7 @@ public class DMAxv2 extends IOUnit {
                 sourceAddress &= ~(0xFFFF);
                 sourceAddress |= ( data & 0xFFFF);
                 currentSourceAddress = sourceAddress;
-				log("DMA Ch." + channelNo + " LO sourceAddress : " + Utils.hex(sourceAddress,8) + " : " + Utils.hex(data,8)  );         
+				//log("DMA Ch." + channelNo + " LO sourceAddress : " + Utils.hex(sourceAddress,8) + " : " + Utils.hex(data,8)  );         
                 if ((data == 0) && (destinationAddress !=0 ) ) {
 					cpu.profiler.printStackTrace(System.out);
 					//System.out.println(Thread.currentThread().getStackTrace());
@@ -187,7 +187,7 @@ public class DMAxv2 extends IOUnit {
                 if (data == 0) {
 					cpu.profiler.printStackTrace(System.out);
 				}
-				log("DMA Ch." + channelNo + " HI sourceAddress : " + Utils.hex(sourceAddress,8) + " : " + Utils.hex(data,8)  );         
+				//log("DMA Ch." + channelNo + " HI sourceAddress : " + Utils.hex(sourceAddress,8) + " : " + Utils.hex(data,8)  );         
                 break;
             case DMAxDAlow:
                 destinationAddress &= ~(0xFFFF);
@@ -196,7 +196,7 @@ public class DMAxv2 extends IOUnit {
                 if (data == 0) {
 					cpu.profiler.printStackTrace(System.out);
 				}
-				log("DMA Ch." + channelNo + " LO destinationAddress : " + Utils.hex(destinationAddress,8) + " : " + Utils.hex(data,8)  );         
+				//log("DMA Ch." + channelNo + " LO destinationAddress : " + Utils.hex(destinationAddress,8) + " : " + Utils.hex(data,8)  );         
                 break;
             case DMAxDAhigh:
                 destinationAddress &= (0xFFFF);
@@ -205,7 +205,7 @@ public class DMAxv2 extends IOUnit {
                 if (data == 0) {
 					cpu.profiler.printStackTrace(System.out);
 				}
-				log("DMA Ch." + channelNo + " HI destinationAddress : " + Utils.hex(destinationAddress,8) + " : " + Utils.hex(data,8)  );         
+				//log("DMA Ch." + channelNo + " HI destinationAddress : " + Utils.hex(destinationAddress,8) + " : " + Utils.hex(data,8)  );         
                 break;
             case DMAxSZ:
                 size = data;
@@ -273,7 +273,7 @@ public class DMAxv2 extends IOUnit {
                         enable = false;
                         ctl &= ~0x0010;
                         if (DEBUG) {
-                            log("DMA ch. " + channelNo + " EoT: end of transfer with IV: 0x" + Utils.hex(dmaIV,4));
+                            //log("DMA ch. " + channelNo + " EoT: end of transfer with IV: 0x" + Utils.hex(dmaIV,4));
                         }
                     }
                     /* flag interrupt and update interrupt vector */
@@ -373,6 +373,10 @@ public class DMAxv2 extends IOUnit {
         if (DEBUG || true) {
             if (address >= offset + DMA_BLOCK_CONTROL + 1 && address < offset + DMA_BLOCK_CHANNEL0) {
                 log("DMA Debug --- $0x" + Utils.hex(address-(offset + DMA_BLOCK_CONTROL), 5) + ": 0x" + Utils.hex(value, 5) + "--- @" + cpu.getTimeMillis());
+                /*
+                if ( (address-(offset + DMA_BLOCK_CONTROL) == 0x0006) && ( value == 0x73c)) {
+					new Scanner(System.in).nextLine();
+				}*/
             }
             else if (address < offset + DMA_BLOCK_CHANNEL0  || address >= offset + DMA_BLOCK_CHANNEL2) {
                 log("DMA DEbug -+- $0x" + Utils.hex(address-(offset + DMA_BLOCK_CHANNEL2), 5) + ": 0x" + Utils.hex(value, 5));

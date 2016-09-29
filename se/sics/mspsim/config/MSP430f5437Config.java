@@ -39,8 +39,8 @@ import java.util.ArrayList;
 import se.sics.mspsim.core.ClockSystem;
 import se.sics.mspsim.core.DMAxv2;
 import se.sics.mspsim.core.USCI;
-import static se.sics.mspsim.core.USCI.RXIFG;
-import se.sics.mspsim.core.USCI;
+import static se.sics.mspsim.core.GenericUSCI.RXIFG;
+import se.sics.mspsim.core.GenericUSCI;
 import se.sics.mspsim.core.IOPort;
 import se.sics.mspsim.core.IOUnit;
 import se.sics.mspsim.core.InterruptMultiplexer;
@@ -147,7 +147,7 @@ public class MSP430f5437Config extends MSP430Config {
 
         /* this code should be slightly more generic... and be somewhere else... */
         for (int i = 0, n = uartConfig.length; i < n; i++) {
-            USCI usci = new USCI(cpu, i, cpu.memory, this);
+            GenericUSCI usci = new GenericUSCI(cpu, i, cpu.memory, this);
             /* setup 0 - 1f as IO addresses */
             cpu.setIORange(uartConfig[i].offset, 0x20, usci);
 //            System.out.println("Adding IOUnit USCI: " + usci.getName());
@@ -175,14 +175,14 @@ public class MSP430f5437Config extends MSP430Config {
         cpu.setIORange(0x500, 0x40, dma);
 
         /* configure the DMA */
-        dma.setDMATrigger(DMAxv2.USCIA0RX, (USCI)(cpu.getIOUnit("USCIA0")), USCI.RXIFG);
-        dma.setDMATrigger(DMAxv2.USCIA0TX, (USCI)(cpu.getIOUnit("USCIA0")), USCI.TXIFG);
-        dma.setDMATrigger(DMAxv2.USCIA1RX, (USCI)(cpu.getIOUnit("USCIA1")), USCI.RXIFG);
-        dma.setDMATrigger(DMAxv2.USCIA1TX, (USCI)(cpu.getIOUnit("USCIA1")), USCI.TXIFG);
-        dma.setDMATrigger(DMAxv2.USCIB0RX, (USCI)(cpu.getIOUnit("USCIB0")), USCI.RXIFG);
-        dma.setDMATrigger(DMAxv2.USCIB0TX, (USCI)(cpu.getIOUnit("USCIB0")), USCI.TXIFG);
-        dma.setDMATrigger(DMAxv2.USCIB1RX, (USCI)(cpu.getIOUnit("USCIB1")), USCI.RXIFG);
-        dma.setDMATrigger(DMAxv2.USCIB1TX, (USCI)(cpu.getIOUnit("USCIB1")), USCI.TXIFG);
+        dma.setDMATrigger(DMAxv2.USCIA0RX, (GenericUSCI)(cpu.getIOUnit("USCIA0")), GenericUSCI.RXIFG);
+        dma.setDMATrigger(DMAxv2.USCIA0TX, (GenericUSCI)(cpu.getIOUnit("USCIA0")), GenericUSCI.TXIFG);
+        dma.setDMATrigger(DMAxv2.USCIA1RX, (GenericUSCI)(cpu.getIOUnit("USCIA1")), GenericUSCI.RXIFG);
+        dma.setDMATrigger(DMAxv2.USCIA1TX, (GenericUSCI)(cpu.getIOUnit("USCIA1")), GenericUSCI.TXIFG);
+        dma.setDMATrigger(DMAxv2.USCIB0RX, (GenericUSCI)(cpu.getIOUnit("USCIB0")), GenericUSCI.RXIFG);
+        dma.setDMATrigger(DMAxv2.USCIB0TX, (GenericUSCI)(cpu.getIOUnit("USCIB0")), GenericUSCI.TXIFG);
+        dma.setDMATrigger(DMAxv2.USCIB1RX, (GenericUSCI)(cpu.getIOUnit("USCIB1")), GenericUSCI.RXIFG);
+        dma.setDMATrigger(DMAxv2.USCIB1TX, (GenericUSCI)(cpu.getIOUnit("USCIB1")), GenericUSCI.TXIFG);
         //dma.setInterruptMultiplexer(new InterruptMultiplexer(cpu, 50));
         ioUnits.add(dma);        
         

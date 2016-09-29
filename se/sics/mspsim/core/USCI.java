@@ -40,7 +40,7 @@ package se.sics.mspsim.core;
 import se.sics.mspsim.core.EmulationLogger.WarningType;
 
 
-public class USCI extends IOUnit implements SFRModule, DMAxv2Trigger, USARTSource {
+public class USCI extends IOUnit implements SFRModule, DMATrigger, USARTSource {
 
   // USART 0/1 register offset (0x60 / 0xD0)
   public static final int UAxCTL0 = 0;
@@ -124,7 +124,7 @@ public class USCI extends IOUnit implements SFRModule, DMAxv2Trigger, USARTSourc
   private boolean spiMode = false;
   
   /* DMA controller that needs to be called at certain times */
-  private DMAxv2 dma;
+  private DMA dma;
   private int dmaIndex;
   
   private boolean usciA = true; /* if this is an USCI A or B */
@@ -166,7 +166,7 @@ public class USCI extends IOUnit implements SFRModule, DMAxv2Trigger, USARTSourc
     reset(0);
   }
 
-  public void setDMA(DMAxv2 dma) {
+  public void setDMA(DMA dma) {
       this.dma = dma;
   }
 
