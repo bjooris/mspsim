@@ -437,7 +437,7 @@ public class GenericUSCI extends IOUnit implements DMAxv2Trigger, USARTSource {
     // This needs to be complemented with a method for checking if the USART
     // is ready for next byte (readyForReceive) that respects the current speed
     public void byteReceived(int b) {
-        System.out.println(getName() + " byte received: " + b);
+        //System.out.println(getName() + " byte received: " + b);
 
         if (DEBUG) {
             log("byteReceived: " + b + " " + (char) b);

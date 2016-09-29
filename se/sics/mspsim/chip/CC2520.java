@@ -1051,7 +1051,10 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             break;
         case REG_FRMCTRL0:
             autoCRC = (data & AUTOCRC) != 0;
-            autoAck = (data & AUTOACK) != 0;
+            if (autoAck != ( (data & AUTOACK) != 0 ) ) {
+				autoAck = (data & AUTOACK) != 0;
+				System.out.printf(info());
+			}
             break;
         case REG_TXPOWER:
             if (!isDefinedTxPower(data)) {
@@ -1471,11 +1474,13 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         if (DEBUG) {
             log("SFD: " + sfd + " @ " + cpu.getTimeMillis());
         }
+        /*
         if (sfd == false) {
 			for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
 				System.out.println(ste);
 			}
-		}    
+		} 
+		*/
     }
 
     private void setFIFOP(boolean fifop) {

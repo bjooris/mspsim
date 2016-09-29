@@ -134,8 +134,7 @@ public class CC2520SPI {
             },
             new SPICommand("SRFOFF 0 1 0 0 0 1 0 1") {
                 public void executeSPICommand() {
-					System.out.printf(cc2520.info());
-                    spiData.outputSPI(cc2520.getStatus());
+					//System.out.printf(cc2520.info());
                     cc2520.rxtxoff();
                 }
             },
@@ -176,6 +175,9 @@ public class CC2520SPI {
             new SPICommand("BCLR 0 1 0 1 1 0 0 0 a a a a a b b b") {
                 final BitField adr = getBitField("a");
                 final BitField bit = getBitField("b");
+                public boolean dataReceived(int data) {
+					return true;
+				}
                 public void executeSPICommand() {
 					int cAdr = adr.getValue(spiData);
 					int cBit = ~(1 <<  bit.getValue(spiData));
@@ -186,6 +188,9 @@ public class CC2520SPI {
             new SPICommand("BSET 0 1 0 1 1 0 0 1 a a a a a b b b") {
                 final BitField adr = getBitField("a");
                 final BitField bit = getBitField("b");
+                public boolean dataReceived(int data) {
+					return true;
+				}
                 public void executeSPICommand() {
 					int cAdr = adr.getValue(spiData);
 					int cBit = 1 <<  bit.getValue(spiData);
