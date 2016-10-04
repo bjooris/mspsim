@@ -75,7 +75,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
 
         public void setActive(boolean isActive) {
             if (DEBUG) {
-                //log("GPIO at port : " + (port ==null? "xxxx" :port.getName()) + " pin: " + pin + " f: 0x" + Utils.hex(gpiof,2) + " v: " + isActive);
+                log("GPIO at port : " + (port ==null? "xxxx" :port.getName()) + " pin: " + pin + " f: 0x" + Utils.hex(gpiof,2) + " v: " + isActive);
             }
             if (this.isActive != isActive) {
                 this.isActive = isActive;
@@ -637,6 +637,11 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         return stateMachine;
     }
 
+    public int getStatus() {
+        return status;
+    }
+
+    
     private int getFCFReservedMask() {
         return (memory[REG_FRMFILT0] >> 4) & 7;
     }
@@ -662,6 +667,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     
     private void reset() {
         // FCF max fram version = 3 and frame filtering enabled
+        if (DEBUG) log("Will RESET the CC2520!");
         memory[REG_FRMFILT0] = 0x0d;
         frameFilter = true;
         memory[REG_FRMFILT1] = 0x78;
@@ -724,7 +730,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             status &= ~(STATUS_RSSI_VALID | STATUS_XOSC16M_STABLE);
             memory[REG_RSSISTAT] = 0;
             crcOk = false;
-            reset();
+            //reset();
             setMode(MODE_POWER_OFF);
             updateCCA();
             break;
@@ -1045,7 +1051,10 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             break;
         case REG_FRMCTRL0:
             autoCRC = (data & AUTOCRC) != 0;
-            autoAck = (data & AUTOACK) != 0;
+            if (autoAck != ( (data & AUTOACK) != 0 ) ) {
+				autoAck = (data & AUTOACK) != 0;
+				System.out.printf(info());
+			}
             break;
         case REG_TXPOWER:
             if (!isDefinedTxPower(data)) {
@@ -1372,6 +1381,9 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         if (DEBUG) log("Oscillator Off.");
         // Reset state
         setFIFOP(false);
+        setFIFO(false);
+        setSFD(false);
+        SOport.setPinState(SOpin, IOPort.PinState.LOW);        
     }
 
     void flushRX() {
@@ -1463,11 +1475,13 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         if (DEBUG) {
             log("SFD: " + sfd + " @ " + cpu.getTimeMillis());
         }
+        /*
         if (sfd == false) {
 			for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
 				System.out.println(ste);
 			}
-		}    
+		} 
+		*/
     }
 
     private void setFIFOP(boolean fifop) {
@@ -1733,7 +1747,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         }
 
         if (DEBUG) {
-            log("ChipSelect: " + chipSelect );
+            //log("ChipSelect: " + chipSelect );
         }
     }
 

@@ -73,6 +73,9 @@ public class USCI extends IOUnit implements SFRModule, DMATrigger, USARTSource {
   public static final int UTXIFG1 = 0x20;
   public static final int URXIFG1 = 0x10;
 
+  public static final int RXIFG = 0;
+  public static final int TXIFG = 1;
+  
   // USART SRF mod enable registers (absolute + 1)
   public static final int ME1 = 4;
   public static final int IE1 = 0;
@@ -458,7 +461,7 @@ public class USCI extends IOUnit implements SFRModule, DMATrigger, USARTSource {
   // This needs to be complemented with a method for checking if the USART
   // is ready for next byte (readyForReceive) that respects the current speed
   public void byteReceived(int b) {
-      //System.out.println(getName() + " byte received: " + b + " enabled:" + rxEnabled);
+      System.out.println(getName() + " byte received: " + b + " enabled:" + rxEnabled + " ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++");
       if (!rxEnabled) return;
     
     if (DEBUG || true) {

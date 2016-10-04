@@ -68,7 +68,7 @@ public class Leds extends Chip {
         if (this.leds != leds) {
             this.leds = leds;
             stateChanged(leds);
-            if (DEBUG) log(ledColors.length <= 8 ? Utils.binary8(leds) : Utils.binary16(leds));
+            //if (DEBUG) log(ledColors.length <= 8 ? Utils.binary8(leds) : Utils.binary16(leds));
         }
     }
 
