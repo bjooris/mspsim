@@ -12,7 +12,7 @@ import java.util.Scanner;
 
 public class DMAxv2 extends IOUnit {
 
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
     
     
     // DMA block offset
@@ -150,7 +150,7 @@ public class DMAxv2 extends IOUnit {
                 boolean clearingIFG = dmaIFG && ((data & IFG_MASK) == 0);
                 dmaIFG = (data & IFG_MASK) > 0; /* bit 3 */
                 dmaIE = (data & 0x04) > 0; /* bit 2 */
-                if (DEBUG && false) {
+                if (DEBUG) {
                     log("DMA Ch." + channelNo + ": conf srcInc: " + srcIncr + " dstInc:" + dstIncr
                         + " en: " + enable + " srcB:" + srcByteMode + " dstB:" + dstByteMode + " lvl: " + dmaLevel +
                         " transMode: " + transferMode + " ie:" + dmaIE + " ifg:" + dmaIFG + " (" + sourceAddress + ", " + destinationAddress + ")");
@@ -175,11 +175,6 @@ public class DMAxv2 extends IOUnit {
 				//log("DMA Ch." + channelNo + " LO sourceAddress : " + Utils.hex(sourceAddress,8) + " : " + Utils.hex(data,8)  );         
                 if ((data == 0) && (destinationAddress !=0 ) ) {
 					cpu.profiler.printStackTrace(System.out);
-					//System.out.println(Thread.currentThread().getStackTrace());
-					for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
-						System.out.println(ste);
-					}
-					new Scanner(System.in).nextLine();
 				}
                 break;
             case DMAxSAhigh:
@@ -212,7 +207,7 @@ public class DMAxv2 extends IOUnit {
             case DMAxSZ:
                 size = data;
                 storedSize = data;
-				log("DMA Ch." + channelNo + " Size : " + Utils.hex(size,8) );         
+				if(DEBUG) log("DMA Ch." + channelNo + " Size : " + Utils.hex(size,8) );         
                 break;
             }
             
@@ -253,10 +248,9 @@ public class DMAxv2 extends IOUnit {
             /* perform memory move and possibly clear triggering flag!!! */
             /* NOTE: show config byte/word also !!! */
             if (enable) {
-				log("------------------> DMA ch. " + channelNo + " Triggered transfer");
                 int data = cpu.currentSegment.read(currentSourceAddress, Memory.AccessMode.BYTE, Memory.AccessType.READ);
                 //data = cpu.memory[currentSourceAddress];
-                if (DEBUG && false) 
+                if (DEBUG) 
                     log("DMA ch. " + channelNo + " Triggered transfer from: $" +
                         Utils.hex(currentSourceAddress, 5) + " : 0x" + Utils.hex(data,2) + " " + (data < 32? '.' : (char) data) + " to $" +
                         Utils.hex(currentDestinationAddress, 5) + 
@@ -373,7 +367,7 @@ public class DMAxv2 extends IOUnit {
 
     
     public void write(int address, int value, boolean word, long cycles) {
-        if (DEBUG || true) {
+        if (DEBUG) {
             if (address >= offset + DMA_BLOCK_CONTROL + 1 && address < offset + DMA_BLOCK_CHANNEL0) {
                 log("DMA Debug --- $0x" + Utils.hex(address-(offset + DMA_BLOCK_CONTROL), 5) + ": 0x" + Utils.hex(value, 5) + "--- @" + cpu.getTimeMillis());
                 /*

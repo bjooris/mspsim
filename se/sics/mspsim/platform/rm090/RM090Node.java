@@ -55,6 +55,8 @@ import se.sics.mspsim.ui.SerialMon;
 import se.sics.mspsim.util.ArgumentManager;
 
 public class RM090Node extends GenericNode implements PortListener, USARTListener {
+	
+    private static final boolean DEBUG = false;
 
    @SuppressWarnings("unchecked")
    ArrayList<Pin>[] nodePorts = (ArrayList<Pin>[])new ArrayList[11];

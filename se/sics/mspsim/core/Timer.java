@@ -914,7 +914,7 @@ public class Timer extends IOUnit {
       }
       if (!lock) return;
       CCR reg = ccr[ccrIndex];
-      System.err.println("capture lock found on ccr index: " + ccrIndex + " and source: " + source + " on: " + reg.captureOn + " sel: " + reg.inputSel);
+      if(DEBUG) System.err.println("capture lock found on ccr index: " + ccrIndex + " and source: " + source + " on: " + reg.captureOn + " sel: " + reg.inputSel);
       
       if (reg.captureOn && reg.inputSel == source) {
           /* This is obviously a capture! */

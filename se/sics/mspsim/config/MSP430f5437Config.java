@@ -175,14 +175,17 @@ public class MSP430f5437Config extends MSP430Config {
         cpu.setIORange(0x500, 0x40, dma);
 
         /* configure the DMA */
-        dma.setDMATrigger(DMAxv2.USCIA0RX, (GenericUSCI)(cpu.getIOUnit("USCIA0")), GenericUSCI.RXIFG);
-        dma.setDMATrigger(DMAxv2.USCIA0TX, (GenericUSCI)(cpu.getIOUnit("USCIA0")), GenericUSCI.TXIFG);
-        dma.setDMATrigger(DMAxv2.USCIA1RX, (GenericUSCI)(cpu.getIOUnit("USCIA1")), GenericUSCI.RXIFG);
-        dma.setDMATrigger(DMAxv2.USCIA1TX, (GenericUSCI)(cpu.getIOUnit("USCIA1")), GenericUSCI.TXIFG);
+        
+        // Commented out some stuff for RM090 - Line 136 in GenericUSCI (dma should be enabled first before using it)
+        
+        //~ dma.setDMATrigger(DMAxv2.USCIA0RX, (GenericUSCI)(cpu.getIOUnit("USCIA0")), GenericUSCI.RXIFG);
+        //~ dma.setDMATrigger(DMAxv2.USCIA0TX, (GenericUSCI)(cpu.getIOUnit("USCIA0")), GenericUSCI.TXIFG);
+        //~ dma.setDMATrigger(DMAxv2.USCIA1RX, (GenericUSCI)(cpu.getIOUnit("USCIA1")), GenericUSCI.RXIFG);
+        //~ dma.setDMATrigger(DMAxv2.USCIA1TX, (GenericUSCI)(cpu.getIOUnit("USCIA1")), GenericUSCI.TXIFG);
         dma.setDMATrigger(DMAxv2.USCIB0RX, (GenericUSCI)(cpu.getIOUnit("USCIB0")), GenericUSCI.RXIFG);
         dma.setDMATrigger(DMAxv2.USCIB0TX, (GenericUSCI)(cpu.getIOUnit("USCIB0")), GenericUSCI.TXIFG);
-        dma.setDMATrigger(DMAxv2.USCIB1RX, (GenericUSCI)(cpu.getIOUnit("USCIB1")), GenericUSCI.RXIFG);
-        dma.setDMATrigger(DMAxv2.USCIB1TX, (GenericUSCI)(cpu.getIOUnit("USCIB1")), GenericUSCI.TXIFG);
+        //~ dma.setDMATrigger(DMAxv2.USCIB1RX, (GenericUSCI)(cpu.getIOUnit("USCIB1")), GenericUSCI.RXIFG);
+        //~ dma.setDMATrigger(DMAxv2.USCIB1TX, (GenericUSCI)(cpu.getIOUnit("USCIB1")), GenericUSCI.TXIFG);
         //dma.setInterruptMultiplexer(new InterruptMultiplexer(cpu, 50));
         ioUnits.add(dma);        
         

@@ -13,6 +13,8 @@ import se.sics.mspsim.util.Utils;
  * @author Víctor Ariño <victor.arino@tado.com>
  */
 public class GenericUSCI extends IOUnit implements DMAxv2Trigger, USARTSource {
+	
+    private static final boolean DEBUG = false;
 
     // USCI A/Bx common register offset
     public static final int CTL0 = 1; /* Is this really correct??? */
@@ -140,7 +142,9 @@ public class GenericUSCI extends IOUnit implements DMAxv2Trigger, USARTSource {
         }
         else {
             updateIV();
-            if ((ifg & ie) > 0) cpu.flagInterrupt(vector, this, true);
+            if ((ifg & ie) > 0) {
+				cpu.flagInterrupt(vector, this, true);
+			}
         }
     }
 
@@ -148,7 +152,9 @@ public class GenericUSCI extends IOUnit implements DMAxv2Trigger, USARTSource {
         ifg &= ~bits;
         /* if no more interrupts here - turn off... */
         updateIV();
-        if ((ifg & ie) == 0) cpu.flagInterrupt(vector, this, false);
+        if ((ifg & ie) == 0) {
+			cpu.flagInterrupt(vector, this, false);
+		}
     }
 
     protected int getIFG() {
@@ -324,6 +330,9 @@ public class GenericUSCI extends IOUnit implements DMAxv2Trigger, USARTSource {
         break;
       case IE:
           ie = data;
+		  if (word) {
+			ifg = (data >> 8) & 0x0FF;
+		  } 
         break;
       case TXBUF:
         if (DEBUG) log(": USART_UTXBUF:" + (data>=32?(char) data:'.') + " = 0x" + Utils.hex(data,2 ) + "\n");
@@ -412,6 +421,9 @@ public class GenericUSCI extends IOUnit implements DMAxv2Trigger, USARTSource {
         case IFG:
             return ifg;
         case IV:
+			//~ System.out.println("ifg before " + ifg);
+			ifg &= ~((iv -2) /2);
+			//~ System.out.println("ifg after " + ifg);
             return iv;
         }
         return 0;
@@ -467,7 +479,7 @@ public class GenericUSCI extends IOUnit implements DMAxv2Trigger, USARTSource {
     }
 
     public boolean getDMATriggerState(int index) {
-      log("getDMATriggerState: " + index);
+      if(DEBUG) log("getDMATriggerState: " + index);
       if (index == RXIFG) {
           return (getIFG() & RXIFG) > 0;
       }
