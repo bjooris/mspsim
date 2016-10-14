@@ -745,6 +745,7 @@ public class MSP430Core extends Chip implements MSP430Constants {
   }
 
   public <T> T getIOUnit(Class<T> type, String name) {
+	  System.out.println("REGISTER IO UNIT " + name);
       for (IOUnit ioUnit : ioUnits) {
           if (type.isInstance(ioUnit)
                   && (name.replaceAll("\\s+","").equalsIgnoreCase(ioUnit.getID())

@@ -261,6 +261,11 @@ public class CC2520SPI {
         }
         return null;
     }
+    
+    void printAvailableCommands(){
+		for(int i = 0 ; i < 256 ; i++) if(commands[i] != null) System.out.print(i + ",");
+		System.out.println(" ");
+	}
 
 //   public static void main(String[] args) {
 //       CC2520SPI spi = new CC2520SPI(null);

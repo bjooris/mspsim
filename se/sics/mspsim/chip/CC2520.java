@@ -45,7 +45,7 @@ import java.util.Scanner;
 
 public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     
-    private static final boolean DEBUG = true;
+    private static final boolean DEBUG = false;
 
     public class GPIO {
         private IOPort port;
@@ -1143,6 +1143,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             if (command == null) {
                 logw(WarningType.EMULATION_ERROR, "**** Warning - not implemented command on SPI: " + data);
 				new Scanner(System.in).nextLine();
+                cc2520SPI.printAvailableCommands();
             } else if (DEBUG) {
                 if (!"SNOP".equals(command.name)) {
                     log("SPI command: " + command.name);
@@ -1161,6 +1162,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         }
 
         if (command != null) {
+			//~ System.out.println("SPI " + command.name);
             command.dataReceived(data);
             if (spiLen == command.commandLen) {
                 if (DEBUG) {
@@ -1476,13 +1478,6 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         if (DEBUG) {
             log("SFD: " + sfd + " @ " + cpu.getTimeMillis());
         }
-        /*
-        if (sfd == false) {
-			for (StackTraceElement ste : Thread.currentThread().getStackTrace()) {
-				System.out.println(ste);
-			}
-		} 
-		*/
     }
 
     private void setFIFOP(boolean fifop) {
@@ -1720,12 +1715,12 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     }
 
     public void setResetPin(boolean reset) {
-        if (reset == resetPin) return;
+        //~ if (reset == resetPin) return;
         resetPin = reset;
         if (reset) { //LOW
             //reset();
         }
-        else { //HIGH
+        else if(SOport != null) { //HIGH
             SOport.setPinState(SOpin, IOPort.PinState.LOW);        
             if(stateMachine == RadioState.POWER_DOWN) {
                 startOscillator();
