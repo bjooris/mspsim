@@ -41,6 +41,7 @@ import se.sics.mspsim.core.EmulationLogger.WarningType;
 import se.sics.mspsim.util.ArrayFIFO;
 import se.sics.mspsim.util.CCITT_CRC;
 import se.sics.mspsim.util.Utils;
+import java.util.Scanner;
 
 public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     
@@ -1141,6 +1142,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             command = cc2520SPI.getCommand(data);
             if (command == null) {
                 logw(WarningType.EMULATION_ERROR, "**** Warning - not implemented command on SPI: " + data);
+				new Scanner(System.in).nextLine();
             } else if (DEBUG) {
                 if (!"SNOP".equals(command.name)) {
                     log("SPI command: " + command.name);
