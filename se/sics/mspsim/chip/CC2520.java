@@ -63,10 +63,14 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         }
 
         public void assign(int gpiof) {
+			if (vgpio[this.gpiof] == this) {
+				vgpio[this.gpiof] = dummyGpio;
+				log("gpio: reconfigured old 0x" + Utils.hex(this.gpiof,2) + " to dummy");
+			}
             vgpio[gpiof] = this;
             this.gpiof = gpiof;
             if (DEBUG) {
-                //log("gpio: reconfigured: 0x" + Utils.hex(gpiof,2) + " @ " + vgpio[gpiof]);
+                log("gpio: reconfigured: 0x" + Utils.hex(gpiof,2) + " @ " + vgpio[gpiof]);
             }
         }
         
@@ -76,7 +80,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
 
         public void setActive(boolean isActive) {
             if (DEBUG) {
-                log("GPIO at port : " + (port ==null? "xxxx" :port.getName()) + " pin: " + pin + " f: 0x" + Utils.hex(gpiof,2) + " v: " + isActive);
+                //log("GPIO at port : " + (port ==null? "xxxx" :port.getName()) + " pin: " + pin + " f: 0x" + Utils.hex(gpiof,2) + " v: " + isActive);
             }
             if (this.isActive != isActive) {
                 this.isActive = isActive;
@@ -268,92 +272,92 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
 
     
     //inputs
-    public final static int GPIO_CFG_I_SIBUFEX			= 0x00 + 0x80;
+    public final static int GPIO_CFG_I_SIBUFEX				= 0x00 + 0x80;
     public final static int GPIO_CFG_I_SRXMASKBITCLR		= 0x01 + 0x80;
     public final static int GPIO_CFG_I_SRXMASKBITSET		= 0x02 + 0x80;
-    public final static int GPIO_CFG_I_SRXON			= 0x03 + 0x80;
-    public final static int GPIO_CFG_I_SSAMPLECCA		= 0x04 + 0x80;
-    public final static int GPIO_CFG_I_SACK			= 0x05 + 0x80;
-    public final static int GPIO_CFG_I_SACKPEND			= 0x06 + 0x80;
-    public final static int GPIO_CFG_I_SNACK			= 0x07 + 0x80;
-    public final static int GPIO_CFG_I_STXON			= 0x08 + 0x80;
-    public final static int GPIO_CFG_I_STXONCCA			= 0x09 + 0x80;
-    public final static int GPIO_CFG_I_SFLUSHRX			= 0x0A + 0x80;
-    public final static int GPIO_CFG_I_SFLUSHTX			= 0x0B + 0x80;
-    public final static int GPIO_CFG_I_SRXFIFOPOP		= 0x0C + 0x80;
-    public final static int GPIO_CFG_I_STXCAL			= 0x0D + 0x80;
-    public final static int GPIO_CFG_I_SRFOFF			= 0x0E + 0x80;
-    public final static int GPIO_CFG_I_SOSCOFF			= 0x0F + 0x80;
+    public final static int GPIO_CFG_I_SRXON				= 0x03 + 0x80;
+    public final static int GPIO_CFG_I_SSAMPLECCA			= 0x04 + 0x80;
+    public final static int GPIO_CFG_I_SACK					= 0x05 + 0x80;
+    public final static int GPIO_CFG_I_SACKPEND				= 0x06 + 0x80;
+    public final static int GPIO_CFG_I_SNACK				= 0x07 + 0x80;
+    public final static int GPIO_CFG_I_STXON				= 0x08 + 0x80;
+    public final static int GPIO_CFG_I_STXONCCA				= 0x09 + 0x80;
+    public final static int GPIO_CFG_I_SFLUSHRX				= 0x0A + 0x80;
+    public final static int GPIO_CFG_I_SFLUSHTX				= 0x0B + 0x80;
+    public final static int GPIO_CFG_I_SRXFIFOPOP			= 0x0C + 0x80;
+    public final static int GPIO_CFG_I_STXCAL				= 0x0D + 0x80;
+    public final static int GPIO_CFG_I_SRFOFF				= 0x0E + 0x80;
+    public final static int GPIO_CFG_I_SOSCOFF				= 0x0F + 0x80;
     //Outputs
-    public final static int GPIO_CFG_O_CLOCK			= 0x00;
-    public final static int GPIO_CFG_O_RF_IDLE			= 0x01;
-    public final static int GPIO_CFG_O_TX_FRM_DONE		= 0x02;
-    public final static int GPIO_CFG_O_TX_ACK_DONE		= 0x03;
-    public final static int GPIO_CFG_O_TX_UNDERFLOW		= 0x04;
-    public final static int GPIO_CFG_O_TX_OVERFLOW		= 0x05;
-    public final static int GPIO_CFG_O_RX_UNDERFLOW		= 0x06;
-    public final static int GPIO_CFG_O_RX_OVERFLOW		= 0x07;
+    public final static int GPIO_CFG_O_CLOCK				= 0x00;
+    public final static int GPIO_CFG_O_RF_IDLE				= 0x01;
+    public final static int GPIO_CFG_O_TX_FRM_DONE			= 0x02;
+    public final static int GPIO_CFG_O_TX_ACK_DONE			= 0x03;
+    public final static int GPIO_CFG_O_TX_UNDERFLOW			= 0x04;
+    public final static int GPIO_CFG_O_TX_OVERFLOW			= 0x05;
+    public final static int GPIO_CFG_O_RX_UNDERFLOW			= 0x06;
+    public final static int GPIO_CFG_O_RX_OVERFLOW			= 0x07;
     public final static int GPIO_CFG_O_RXENABLE_ZERO		= 0x08;
-    public final static int GPIO_CFG_O_RX_FRM_DONE		= 0x09;
+    public final static int GPIO_CFG_O_RX_FRM_DONE			= 0x09;
     public final static int GPIO_CFG_O_RX_FRM_ACCEPTED		= 0x0A;
     public final static int GPIO_CFG_O_SRC_MATCH_DONE		= 0x0B;
     public final static int GPIO_CFG_O_SRC_MATCH_FOUND		= 0x0C;
-    public final static int GPIO_CFG_O_FIFOP_			= 0x0D;
-    public final static int GPIO_CFG_O_SFD_			= 0x0E;
-    public final static int GPIO_CFG_O_DPU_L			= 0x0F;
-    public final static int GPIO_CFG_O_DPU_H			= 0x10;
+    public final static int GPIO_CFG_O_FIFOP_				= 0x0D;
+    public final static int GPIO_CFG_O_SFD_					= 0x0E;
+    public final static int GPIO_CFG_O_DPU_L				= 0x0F;
+    public final static int GPIO_CFG_O_DPU_H				= 0x10;
     public final static int GPIO_CFG_O_MEMADDR_ERROR		= 0x11;
-    public final static int GPIO_CFG_O_USAGE_ERROR		= 0x12;
+    public final static int GPIO_CFG_O_USAGE_ERROR			= 0x12;
     public final static int GPIO_CFG_O_OPERAND_ERROR		= 0x13;
     public final static int GPIO_CFG_O_SPI_ERROR			= 0x14;
-    public final static int GPIO_CFG_O_RF_NOLOCK		= 0x15;
+    public final static int GPIO_CFG_O_RF_NOLOCK			= 0x15;
     public final static int GPIO_CFG_O_RX_FRM_ABORTED		= 0x16;
     public final static int GPIO_CFG_O_RXBUFMOV_TIMEOUT		= 0x17;
-    public final static int GPIO_CFG_O_UNUSED			= 0x18;	
+    public final static int GPIO_CFG_O_UNUSED				= 0x18;	
     public final static int GPIO_CFG_O_EXCEPTION_CHN_A		= 0x21;
     public final static int GPIO_CFG_O_EXCEPTION_CHN_B		= 0x22;	
     public final static int GPIO_CFG_O_EXCEPTION_CHN_A_C	= 0x23;
     public final static int GPIO_CFG_O_EXCEPTION_CHN_B_C	= 0x24;	
     public final static int GPIO_CFG_O_EXCEPTION_RX_ERR		= 0x25;
-    public final static int GPIO_CFG_O_EXCEPTION_GEN_ERR        = 0x26;	
-    public final static int GPIO_CFG_O_FIFO			= 0x27;
-    public final static int GPIO_CFG_O_FIFOP			= 0x28;
-    public final static int GPIO_CFG_O_CCA			= 0x29;
-    public final static int GPIO_CFG_O_SFD			= 0x2A;
-    public final static int GPIO_CFG_O_LOCK			= 0x2B;
-    public final static int GPIO_CFG_O_RSSI_VALID		= 0x2C;
-    public final static int GPIO_CFG_O_SAMPLED_CCA		= 0x2D;
-    public final static int GPIO_CFG_O_RAND_I			= 0x2E;
-    public final static int GPIO_CFG_O_RAND_Q			= 0x2F;
-    public final static int GPIO_CFG_O_RAND_XOR_I_Q		= 0x30;
-    public final static int GPIO_CFG_O_SNIFF_CLK		= 0x31;
-    public final static int GPIO_CFG_O_SNIFF_DATA		= 0x32;
+    public final static int GPIO_CFG_O_EXCEPTION_GEN_ERR	= 0x26;	
+    public final static int GPIO_CFG_O_FIFO					= 0x27;
+    public final static int GPIO_CFG_O_FIFOP				= 0x28;
+    public final static int GPIO_CFG_O_CCA					= 0x29;
+    public final static int GPIO_CFG_O_SFD					= 0x2A;
+    public final static int GPIO_CFG_O_LOCK					= 0x2B;
+    public final static int GPIO_CFG_O_RSSI_VALID			= 0x2C;
+    public final static int GPIO_CFG_O_SAMPLED_CCA			= 0x2D;
+    public final static int GPIO_CFG_O_RAND_I				= 0x2E;
+    public final static int GPIO_CFG_O_RAND_Q				= 0x2F;
+    public final static int GPIO_CFG_O_RAND_XOR_I_Q			= 0x30;
+    public final static int GPIO_CFG_O_SNIFF_CLK			= 0x31;
+    public final static int GPIO_CFG_O_SNIFF_DATA			= 0x32;
     public final static int GPIO_CFG_O_MOD_SERIAL_CLK		= 0x33;
     public final static int GPIO_CFG_O_MOD_SERIAL_DATA		= 0x34;
     public final static int GPIO_CFG_O_RX_ACTIVE			= 0x43;
     public final static int GPIO_CFG_O_TX_ACTIVE			= 0x44;
     public final static int GPIO_CFG_O_DPU_CORE_ACTIVEP0	= 0x5E;
-    public final static int GPIO_CFG_O_DPU_CORE_ACTIVEP1        = 0x5F;
+    public final static int GPIO_CFG_O_DPU_CORE_ACTIVEP1	= 0x5F;
     public final static int GPIO_CFG_O_DPU_STATE_L_ACT		= 0x62;
     public final static int GPIO_CFG_O_DPU_STATE_H_ACT		= 0x63;
-    public final static int GPIO_CFG_O_WE_COME_0		= 0x7E;
+    public final static int GPIO_CFG_O_WE_COME_0			= 0x7E;
     public final static int GPIO_CFG_O_WE_COME_1			= 0x7F;
-    public final static int GPIO_CFG_DUMMY                      = 1 + GPIO_CFG_I_SOSCOFF;
-    public final static int GPIO_CFG_MAX                        = 1 + GPIO_CFG_DUMMY;
+    public final static int GPIO_CFG_DUMMY					= 1 + GPIO_CFG_I_SOSCOFF;
+    public final static int GPIO_CFG_MAX					= 1 + GPIO_CFG_DUMMY;
     public final  GPIO dummyGpio = new dummyGPIO();
     
     // RAM Addresses
-    public static final int RAM_TXFIFO              = 0x100;
-    public static final int RAM_RXFIFO              = 0x180;
-    public static final int RAM_IEEEADDR            = 0x3EA;
-    public static final int RAM_PANID               = 0x3F2;
-    public static final int RAM_SHORTADDR           = 0x3F4;
-//    public static final int RAM_KEY0                = 0x100;
-//    public static final int RAM_RXNONCE             = 0x110;
-//    public static final int RAM_SABUF               = 0x120;
-//    public static final int RAM_KEY1                = 0x130;
-//    public static final int RAM_TXNONCE             = 0x140;
-//    public static final int RAM_CBCSTATE            = 0x150;
+    public static final int RAM_TXFIFO						= 0x100;
+    public static final int RAM_RXFIFO						= 0x180;
+    public static final int RAM_IEEEADDR					= 0x3EA;
+    public static final int RAM_PANID						= 0x3F2;
+    public static final int RAM_SHORTADDR					= 0x3F4;
+//    public static final int RAM_KEY0						= 0x100;
+//    public static final int RAM_RXNONCE					= 0x110;
+//    public static final int RAM_SABUF						= 0x120;
+//    public static final int RAM_KEY1						= 0x130;
+//    public static final int RAM_TXNONCE					= 0x140;
+//    public static final int RAM_CBCSTATE					= 0x150;
 
     /* one single byte instruction can be stored in the IBUF */
     int instructionBuffer = 0;
@@ -494,7 +498,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
 
     private CC2520SPI cc2520SPI = new CC2520SPI(this);
     private SPICommand command;
-    private int[] spiData = new int[128]; /* SPI data buffer */
+    private int[] spiData = new int[130]; /* SPI data buffer command + max frame length */ 
     private int spiLen;
 
     // Buffer to hold 5 byte Synchronization header, as it is not written to the TXFIFO
@@ -1152,14 +1156,15 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         }
 
         /* command handling */
-        spiData[spiLen] = data;
         /* ensure that we do not store too many SPI data items */
-        if (spiLen < (spiData.length - 1)) {
-            spiLen++;
-        }
+        if (spiLen < spiData.length) {
+			spiData[spiLen] = data;
+		}
         else {
-            log("Warning: spiLen > (spiData.length)");
+            log("Warning: spiLen >= (spiData.length) " + spiLen + " >=  " + spiData.length );
+			new Scanner(System.in).nextLine();
         }
+        spiLen++;
 
         if (command != null) {
 			//~ System.out.println("SPI " + command.name);

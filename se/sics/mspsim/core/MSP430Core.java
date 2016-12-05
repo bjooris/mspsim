@@ -49,6 +49,7 @@ import se.sics.mspsim.util.DefaultEmulationLogger;
 import se.sics.mspsim.util.MapEntry;
 import se.sics.mspsim.util.MapTable;
 import se.sics.mspsim.util.Utils;
+import java.util.Scanner;
 
 /**
  * The CPU of the MSP430
@@ -1767,6 +1768,8 @@ public class MSP430Core extends Chip implements MSP430Constants {
               default:
                   System.out.println("Error: Not implemented instruction:" +
                           Utils.hex16(instruction));
+				  new Scanner(System.in).nextLine();
+                          
               }
               if (repeats > 0) {
                   dst &= mode.mask;
@@ -1792,6 +1795,7 @@ public class MSP430Core extends Chip implements MSP430Constants {
 	jump = (sr & ZERO) == 0;
 	break;
       case JEQ:
+		//System.out.println("JEQ " + sr + " " + ZERO);
 	jump = (sr & ZERO) > 0;
 	break;
       case JNC:
@@ -1814,6 +1818,8 @@ public class MSP430Core extends Chip implements MSP430Constants {
 	break;
       default:
         logw(WarningType.EMULATION_ERROR, "Not implemented instruction: #" + Utils.binary16(instruction));
+		System.out.println("Not implemented instruction: #" + Utils.binary16(instruction));
+		new Scanner(System.in).nextLine();
       }
       // Perform the Jump
       if (jump) {
@@ -1957,6 +1963,7 @@ public class MSP430Core extends Chip implements MSP430Constants {
         if (dstRegister == 2) {
           /* absolute mode */
           dstAddress = currentSegment.read(pc, AccessMode.WORD, AccessType.READ); //memory[pc] + (memory[pc + 1] << 8);
+          //System.out.println("dstAddress += extDst" + dstAddress + " " + extDst);
           dstAddress += extDst;
         } else {
           // CG here - probably not!???
@@ -2002,6 +2009,8 @@ public class MSP430Core extends Chip implements MSP430Constants {
 
         if (op != MOV) {
         	dst = currentSegment.read(dstAddress, mode, AccessType.READ);
+			//System.out.println("dstAddress + dst = " + dstAddress + " " + dst);
+        	
         }
         pc += 2;
         incRegister(PC, 2);
@@ -2106,14 +2115,20 @@ public class MSP430Core extends Chip implements MSP430Constants {
               write = true;
               break;
           case BIT: // BIT
+			  //int oldDest= dst;
               dst = src & dst;
               // Clear overflow and carry!
               sr = sr & ~(CARRY | OVERFLOW);
               // Set carry if result is non-zero!
               if (dst != 0) {
                   sr |= CARRY;
+                  //sr &= ~ZERO;
+              }
+              else {
+                  //sr |= ZERO;
               }
               writeRegister(SR, sr);
+			  //System.out.println("Executing BIT...sr : " + sr + " src " + src + " oldDest " + oldDest + " dst " + dst); 
               break;
           case BIC: // BIC
               // No status reg change

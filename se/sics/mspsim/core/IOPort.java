@@ -269,6 +269,7 @@ public class IOPort extends IOUnit {
         switch(function) {
         case OUT: {
             out = data;
+            in = (((in & ~dir) | (out | dir))  & 0xff);
             PortListener listener = portListener;
             if (listener != null) {
             	listener.portWrite(this, out | ((~dir) & 0xff));
