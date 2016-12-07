@@ -46,6 +46,7 @@ import java.util.Scanner;
 public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     
     private static final boolean DEBUG = false;
+    private static final boolean TAISCDBG = false;
 
     public class GPIO {
         private IOPort port;
@@ -376,6 +377,8 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
 
     // FRMFILT0/FRMCTRL0 values
     public static final int FRAME_FILTER = (1 << 0);
+    public static final int RXMODE0      = (1 << 2);
+    public static final int RXMODE1      = (1 << 3);
     public static final int AUTOCRC      = (1 << 6);
     public static final int AUTOACK      = (1 << 5);
 
@@ -477,6 +480,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     /* Configuration for frame filtering and auto acknowledgments */
     private boolean frameFilter = false;
     private boolean autoAck = false;
+    private boolean symbolSearchDisabled = false;
     private boolean shouldAck = false;
     private boolean ackRequest = false;
     private boolean autoCRC = false;
@@ -680,6 +684,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         memory[REG_FRMCTRL0] = 0x40;
         autoCRC = true;
         autoAck = false;
+        symbolSearchDisabled = false;
 
         memory[REG_MDMCTRL0] = 0x45;
         memory[REG_MDMCTRL1] = 0x3e;
@@ -869,7 +874,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             log("RF Byte received: " + Utils.hex8(data) + " state: " + stateMachine + " noZeroes: " + zeroSymbols +
                     ((stateMachine == RadioState.RX_SFD_SEARCH || stateMachine == RadioState.RX_FRAME) ? "" : " *** Ignored"));
 
-        if(stateMachine == RadioState.RX_SFD_SEARCH) {
+        if((stateMachine == RadioState.RX_SFD_SEARCH) && (!symbolSearchDisabled) ) {
             // Look for the preamble (4 zero bytes) followed by the SFD byte 0x7A
             if(data == 0) {
                 // Count zero bytes
@@ -1056,6 +1061,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             break;
         case REG_FRMCTRL0:
             autoCRC = (data & AUTOCRC) != 0;
+            symbolSearchDisabled = (data & ( RXMODE0 | RXMODE1)) == (RXMODE0 | RXMODE1);
             if (autoAck != ( (data & AUTOACK) != 0 ) ) {
 				autoAck = (data & AUTOACK) != 0;
 				System.out.printf(info());
@@ -1161,18 +1167,16 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
 			spiData[spiLen] = data;
 		}
         else {
-            log("Warning: spiLen >= (spiData.length) " + spiLen + " >=  " + spiData.length );
+            log("Warning: spiLen >= (spiData.length) " + spiLen + " >=  " + spiData.length  + " @" + cpu.getTimeMillis());
 			new Scanner(System.in).nextLine();
         }
         spiLen++;
 
         if (command != null) {
-			//~ System.out.println("SPI " + command.name);
             command.dataReceived(data);
             if (spiLen == command.commandLen) {
-                if (DEBUG) {
-                    //log("CC2520 Executing command: " + command.name);
-                }
+                if (TAISCDBG) log("execute SPI command: " + command.name + " s:" + (spiLen - 1)  + " @" + cpu.getTimeMillis());
+                else if (DEBUG) log("CC2520 Executing command: " + command.name);
                 command.executeSPICommand();
                 command = null;
                 spiLen = 0;
@@ -1738,17 +1742,20 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     }
     
     public void setChipSelect(boolean select) {
+        int spiLenBu = spiLen - 1;
         chipSelect = select;
-        if (chipSelect) {
+        
+        if (!chipSelect) {
             spiLen = 0;
             if (command != null) {
+                if (TAISCDBG) log("execute SPI command: " + command.name + " s:" + spiLenBu  + " @" + cpu.getTimeMillis());
                 command.executeSPICommand();
             }
             command = null;
         }
 
         if (DEBUG) {
-            //log("ChipSelect: " + chipSelect );
+            log("ChipSelect: " + chipSelect );
         }
     }
 

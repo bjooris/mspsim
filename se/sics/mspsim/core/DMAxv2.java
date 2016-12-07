@@ -13,6 +13,7 @@ import java.util.Scanner;
 public class DMAxv2 extends IOUnit {
 
     private static final boolean DEBUG = false;
+    private static final boolean TAISCDBG = false;
     
     
     // DMA block offset
@@ -367,19 +368,20 @@ public class DMAxv2 extends IOUnit {
 
     
     public void write(int address, int value, boolean word, long cycles) {
-        if (DEBUG) {
+        if (DEBUG || TAISCDBG) {
             if (address >= offset + DMA_BLOCK_CONTROL + 1 && address < offset + DMA_BLOCK_CHANNEL0) {
-                log("DMA Debug --- $0x" + Utils.hex(address-(offset + DMA_BLOCK_CONTROL), 5) + ": 0x" + Utils.hex(value, 5) + "--- @" + cpu.getTimeMillis());
+                if (TAISCDBG) log("TAISC" + ((address-(offset + DMA_BLOCK_CONTROL))/2) + " : " + Utils.hex(value, 4) + " @" + cpu.getTimeMillis());
+                else log("DMA Debug --- $0x" + Utils.hex(address-(offset + DMA_BLOCK_CONTROL), 5) + ": 0x" + Utils.hex(value, 5) + "--- @" + cpu.getTimeMillis());
                 /*
                 if ( (address-(offset + DMA_BLOCK_CONTROL) == 0x0006) && ( value == 0x73c)) {
 					new Scanner(System.in).nextLine();
 				}*/
             }
             else if (address < offset + DMA_BLOCK_CHANNEL0  || address >= offset + DMA_BLOCK_CHANNEL2) {
-                log("DMA DEbug -+- $0x" + Utils.hex(address-(offset + DMA_BLOCK_CHANNEL2), 5) + ": 0x" + Utils.hex(value, 5));
+                if (DEBUG) log("DMA DEbug -+- $0x" + Utils.hex(address-(offset + DMA_BLOCK_CHANNEL2), 5) + ": 0x" + Utils.hex(value, 5));
             }
             else {
-                //log("DMA write to: $0x" + Utils.hex(address, 4) + ": 0x" + Utils.hex(value, 4));
+                if (DEBUG && false) log("DMA write to: $0x" + Utils.hex(address, 4) + ": 0x" + Utils.hex(value, 4));
             }
         }
         address -= offset;
