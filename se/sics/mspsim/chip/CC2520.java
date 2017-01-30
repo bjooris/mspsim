@@ -716,7 +716,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     }
 
     private boolean setState(RadioState state) {
-        if(DEBUG) log("State transition from " + stateMachine + " to " + state);
+        if(DEBUG) log("State transition from " + stateMachine + " to " + state + " @" + cpu.getTimeMillis());
         stateMachine = state;
         /* write to FSM state register */
         memory[REG_FSMSTAT0] = (memory[REG_FSMSTAT0] & 0x3f);//state.getFSMState();
@@ -879,11 +879,11 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
                     ((stateMachine == RadioState.RX_SFD_SEARCH || stateMachine == RadioState.RX_FRAME) ? " OK" : " !gn0red"));
 
         if((stateMachine == RadioState.RX_SFD_SEARCH) && (!symbolSearchDisabled) ) {
-            // Look for the preamble (4 zero bytes) followed by the SFD byte 0x7A
+            // Look for the preamble (2 zero bytes) followed by the SFD byte 0x7A
             if(data == 0) {
                 // Count zero bytes
                 zeroSymbols++;
-            } else if(zeroSymbols >= 4 && data == 0x7A) {
+            } else if(zeroSymbols >= 2 && data == 0x7A) {
                 // If the received byte is !zero, we have counted 4 zero bytes prior to this one,
                 // and the current received byte == 0x7A (SFD), we're in sync.
                 // In RX mode, SFD goes high when the SFD is received
@@ -1462,7 +1462,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
              } else {
                  memory[REG_FSMSTAT1] &= ~(1 << 4);
              }
-             if (DEBUG) log("Setting CCA to: " + currentCCA);
+             if (DEBUG) log("Setting CCA to: " + currentCCA +  " @" + cpu.getTimeMillis());
          }
     }
 
@@ -1504,7 +1504,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         } else {
             memory[REG_FSMSTAT1] &= ~(1 << 6);
         }
-        if (DEBUG) log("Setting FIFOP to " + fifop);
+        if (DEBUG) log("Setting FIFOP to " + fifop + " @" + cpu.getTimeMillis() );
     }
 
     private void setFIFO(boolean fifo) {
