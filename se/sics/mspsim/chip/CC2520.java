@@ -45,8 +45,8 @@ import java.util.Scanner;
 
 public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     
-    private static final boolean DEBUG = false;
-    private static final boolean TAISCDBG = false;
+    private static final boolean DEBUG = true;
+    private static final boolean TAISCDBG = true;
 
     public class GPIO {
         private IOPort port;
@@ -765,7 +765,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             /* 12 symbols calibration, and one byte's wait since we deliver immediately
              * to listener when after calibration?
              */
-            setSymbolEvent(12 + 2);
+            setSymbolEvent(12);
             setMode(MODE_TXRX_ON);
             break;
 
@@ -807,7 +807,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             setTXACTIVE(true);
 
             memory[REG_FSMSTAT1] |= (1 << 1);
-            setSymbolEvent(12 + 2 + 2);
+            setSymbolEvent(12);
             setMode(MODE_TXRX_ON);
             break;
         case TX_ACK_PREAMBLE:
@@ -871,8 +871,12 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         // Received a byte from the "air"
 
         if (DEBUG)
-            log("RF Byte received: " + Utils.hex8(data) + " state: " + stateMachine + " noZeroes: " + zeroSymbols +
-                    ((stateMachine == RadioState.RX_SFD_SEARCH || stateMachine == RadioState.RX_FRAME) ? "" : " *** Ignored"));
+            log(	"RF B:0x" + Utils.hex8(data) + 
+					" stat:" + stateMachine + 
+					" #0s:" + zeroSymbols +
+					" l(Fifo/RX):" + rxFIFO.length() + "/" + rxlen +
+					" addr/rej/fifop : " + decodeAddress + "/" + frameRejected + "/" + currentFIFOP +
+                    ((stateMachine == RadioState.RX_SFD_SEARCH || stateMachine == RadioState.RX_FRAME) ? " OK" : " !gn0red"));
 
         if((stateMachine == RadioState.RX_SFD_SEARCH) && (!symbolSearchDisabled) ) {
             // Look for the preamble (4 zero bytes) followed by the SFD byte 0x7A
@@ -1490,6 +1494,9 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     }
 
     private void setFIFOP(boolean fifop) {
+		if (currentFIFOP == fifop) {
+			if (DEBUG) log("FIFOP was already " + fifop);
+		}
         currentFIFOP = fifop;
         vgpio[GPIO_CFG_O_FIFOP].setActive(fifop);
         if (fifop) {
