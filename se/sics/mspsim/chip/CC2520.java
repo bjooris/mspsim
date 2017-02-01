@@ -45,8 +45,8 @@ import java.util.Scanner;
 
 public class CC2520 extends Radio802154 implements USARTListener, SPIData {
     
-    private static final boolean DEBUG = true;
-    private static final boolean TAISCDBG = true;
+    private static final boolean DEBUG = false;
+    private static final boolean TAISCDBG = false;
 
     public class GPIO {
         private IOPort port;
@@ -560,18 +560,52 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
 
     private TimeEvent sendEvent = new TimeEvent(0, "CC2520 Send") {
         public void execute(long t) {
+            if (rfListener != null) {
+				rfListener.receivedByte((byte)(txBUF & 0xFF));
+				txBUF = 0;
+			}
             txNext();
         }
     };
 
+    private int txBUF;
+    private void radioSendByte(byte b) {
+		if (txBUF == 0) {
+			txBUF = b | 0x100;
+			//cpu.scheduleTimeEventMillis(sendByte, (SYMBOL_PERIOD * 2) /*- 0.001*/);
+		}
+		else {
+			log("Still busy sending previous byte ["+ (txBUF & 0xFF) + "] new byte is [" + b + "]" );
+		}
+	}
+    
+    /*
+    private TimeEvent sendByte = new TimeEvent(0, "CC2520 Send Byte") {
+        public void execute(long t) {
+            if (rfListener != null) {
+				rfListener.receivedByte((byte)(txBUF & 0xFF));
+				txBUF = 0;
+			}
+        }
+    };
+    */
+    
     private TimeEvent ackEvent = new TimeEvent(0, "CC2520 Ack") {
         public void execute(long t) {
+            if (rfListener != null) {
+				rfListener.receivedByte((byte)(txBUF & 0xFF));
+				txBUF = 0;
+			}
             ackNext();
         }
     };
 
     private TimeEvent shrEvent = new TimeEvent(0, "CC2520 SHR") {
         public void execute(long t) {
+            if (rfListener != null) {
+				rfListener.receivedByte((byte)(txBUF & 0xFF));
+				txBUF = 0;
+			}
             shrNext();
         }
     };
@@ -714,9 +748,17 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         setResetPin(false);
         updateCCA();
     }
-
+    
+	double timeStampSetState = 0.0;
+    
     private boolean setState(RadioState state) {
-        if(DEBUG) log("State transition from " + stateMachine + " to " + state + " @" + cpu.getTimeMillis());
+		double currentTimestamp = cpu.getTimeMillis();
+		double diff = currentTimestamp - timeStampSetState;
+		String diffus	= String.format("%4d", Math.round (  diff * 1000.0));
+		String diffS	= String.format("%02d", Math.round ( diff * (1000.0/16.0)));
+		String diffB	= String.format("%02d", Math.round ( diff * (1000.0/32.0)));
+		timeStampSetState = currentTimestamp;
+        if(DEBUG|TAISCDBG) log("STATE (D:"+diffus+"/"+ diffS+"/"+ diffB+") " + stateMachine + " -> " + state + " @c" + cpu.getTimeMillis() ); //+ " @s" + sim.getSimulationTime() );
         stateMachine = state;
         /* write to FSM state register */
         memory[REG_FSMSTAT0] = (memory[REG_FSMSTAT0] & 0x3f);//state.getFSMState();
@@ -874,8 +916,11 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             log(	"RF B:0x" + Utils.hex8(data) + 
 					" stat:" + stateMachine + 
 					" #0s:" + zeroSymbols +
-					" l(Fifo/RX):" + rxFIFO.length() + "/" + rxlen +
-					" addr/rej/fifop : " + decodeAddress + "/" + frameRejected + "/" + currentFIFOP +
+					" l(Fifo/RX):" + rxFIFO.length() + "/" + rxlen + 
+					" " +
+					( decodeAddress ? "ADDR"  : "addr"  ) + "/" +
+					( frameRejected ? "REJ"   : "rej"   ) + "/" +
+					( currentFIFOP  ? "FIFOP" : "fifop" ) +
                     ((stateMachine == RadioState.RX_SFD_SEARCH || stateMachine == RadioState.RX_FRAME) ? " OK" : " !gn0red"));
 
         if((stateMachine == RadioState.RX_SFD_SEARCH) && (!symbolSearchDisabled) ) {
@@ -1179,7 +1224,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
         if (command != null) {
             command.dataReceived(data);
             if (spiLen == command.commandLen) {
-                if (TAISCDBG) log("execute SPI command: " + command.name + " s:" + (spiLen - 1)  + " @" + cpu.getTimeMillis());
+                if (TAISCDBG&false) log("execute SPI command: " + command.name + " s:" + (spiLen - 1)  + " @" + cpu.getTimeMillis());
                 else if (DEBUG) log("CC2520 Executing command: " + command.name);
                 command.executeSPICommand();
                 command = null;
@@ -1286,10 +1331,8 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
                         stateMachine);
             }
         } else {
-            if (rfListener != null) {
-                if (DEBUG) log("transmitting byte SHR: ["+ txCnt +"] "+ Utils.hex8(SHR[shrPos])  + " @ " + cpu.getTimeMillis());
-                rfListener.receivedByte(SHR[shrPos]);
-            }
+			if (DEBUG) log("transmitting byte SHR: ["+ txCnt +"] "+ Utils.hex8(SHR[shrPos])  + " @ " + cpu.getTimeMillis());
+			radioSendByte(SHR[shrPos]);
             shrPos++;
             cpu.scheduleTimeEventMillis(shrEvent, SYMBOL_PERIOD * 2);
         }
@@ -1314,10 +1357,8 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
             if (txfifoPos > 0x7f) {
                 logw(WarningType.EXECUTION, "**** Warning - packet size too large - repeating packet bytes txfifoPos: " + txfifoPos);
             }
-            if (rfListener != null) {
-                if (DEBUG) log("transmitting byte PAY:  ["+ txCnt +"] "+ Utils.hex8(memory[RAM_TXFIFO + (txfifoPos & 0x7f)] & 0xFF) + " @ " + cpu.getTimeMillis());
-                rfListener.receivedByte((byte)(memory[RAM_TXFIFO + (txfifoPos & 0x7f)] & 0xFF));
-            }
+			if (DEBUG) log("transmitting byte PAY:  ["+ txCnt +"] "+ Utils.hex8(memory[RAM_TXFIFO + (txfifoPos & 0x7f)] & 0xFF) + " @ " + cpu.getTimeMillis());
+			radioSendByte((byte)(memory[RAM_TXFIFO + (txfifoPos & 0x7f)] & 0xFF));
             txfifoPos++;
             // Two symbol periods to send a byte...
             cpu.scheduleTimeEventMillis(sendEvent, SYMBOL_PERIOD * 2);
@@ -1358,11 +1399,8 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
                 ackBuf[4] = txCrc.getCRCHi();
                 ackBuf[5] = txCrc.getCRCLow();
             }
-            if (rfListener != null) {
-                if (DEBUG) log("transmitting byte: " + Utils.hex8(memory[RAM_TXFIFO + (txfifoPos & 0x7f)] & 0xFF));
-
-                rfListener.receivedByte((byte)(ackBuf[ackPos] & 0xFF));
-            }
+			if (DEBUG) log("transmitting byte: " + Utils.hex8(memory[RAM_TXFIFO + (txfifoPos & 0x7f)] & 0xFF));
+			radioSendByte((byte)(ackBuf[ackPos] & 0xFF));
             ackPos++;
             // Two symbol periods to send a byte...
             cpu.scheduleTimeEventMillis(ackEvent, SYMBOL_PERIOD * 2);

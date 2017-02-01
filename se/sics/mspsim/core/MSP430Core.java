@@ -135,11 +135,23 @@ public class MSP430Core extends Chip implements MSP430Constants {
 
   final ComponentRegistry registry;
   Profiler profiler;
+  //SimControl sim;
 
+  /*
+  public long getSimulationTime() {
+    return sim.getSimulationTime();
+  }
+  */
+  
+  
   public MSP430Core(int type, ComponentRegistry registry, MSP430Config config) {
     super("MSP430", "MSP430 Core", null);
 
+    //registry.printRegistry(System.out);
+    //System.exit(0);
+    
     logger = registry.getComponent(EmulationLogger.class);
+    //sim = registry.getComponent(SimControl.class);
     if (logger == null) {
         logger = new DefaultEmulationLogger(this, System.out);
         registry.registerComponent("logger", logger);
