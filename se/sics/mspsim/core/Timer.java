@@ -685,7 +685,10 @@ public class Timer extends IOUnit {
       // Control register...
       int index = (iAddress - TCCTL0) / 2;
       CCR reg = ccr[index];
-      boolean softwareTrigger = (data & CC_IFG) > (reg.tcctl & CC_IFG);
+      //bjooris: the next line is not complete!!! Solution in the second assignment to softwareTrigger
+      boolean softwareTrigger = ((data & CC_IE)!=0) & ((data & CC_IFG) > (reg.tcctl & CC_IFG));
+      //if there is an edge on CC_IE while CC_IFG is high then the software trigger should also be activated!!!!
+      softwareTrigger |= ( ((data & CC_IE) > (reg.tcctl & CC_IE)) & ((data & CC_IFG) != 0));
       reg.tcctl = data;
       reg.outMode = (data >> 5)& 7;
       boolean oldCapture = reg.captureOn;
@@ -711,9 +714,11 @@ public class Timer extends IOUnit {
 
       if (softwareTrigger) {
           if (DEBUG) log("softwareTrigger");
-          ccr[index].triggerInterrupt(1);
+          reg.triggerInterrupt(cpu.cycles);
       }
-      
+      else if ((data & CC_IFG) != 0) {
+          if (DEBUG | true) log("no softwareTrigger as no edge was detected on CC_IFG ");
+      }
       updateCounter(cycles);
       
       if (DEBUG) {
