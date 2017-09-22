@@ -43,6 +43,8 @@ import se.sics.mspsim.util.Utils;
 
 public class IOPort extends IOUnit {
 
+    private static final boolean DEBUG = false;
+    
     public enum PinState { LOW, HI };
 
     public enum PortReg {IN, OUT, DIR, SEL, SEL2, IFG, IES, IE, REN, DS, IV_L, IV_H};

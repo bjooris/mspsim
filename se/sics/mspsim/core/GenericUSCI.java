@@ -199,7 +199,7 @@ public class GenericUSCI extends IOUnit implements DMAxv2Trigger, USARTSource {
             /* txbuf always empty after this */
             clrBitIFG(TXIFG);
             transmitting = true;
-            nextTXReady = cycles + tickPerByte + 1;
+            nextTXReady = 0; //cycles + tickPerByte + 1;
             cpu.scheduleCycleEvent(txTrigger, nextTXReady);
         }
 

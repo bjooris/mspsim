@@ -81,7 +81,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
 
         public void setActive(boolean isActive) {
             if (DEBUG) {
-                //log("GPIO at port : " + (port ==null? "xxxx" :port.getName()) + " pin: " + pin + " f: 0x" + Utils.hex(gpiof,2) + " v: " + isActive);
+                log("GPIO at port : " + (port ==null? "xxxx" :port.getName()) + " pin: " + pin + " f: 0x" + Utils.hex(gpiof,2) + " v: " + isActive);
             }
             if (this.isActive != isActive) {
                 this.isActive = isActive;
@@ -1004,7 +1004,7 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
                                 }
                             } else if (frameFilter) {
                                 /* illegal frame when decoding address... */
-                                rejectFrame("illegal frame when decoding address...");
+                                rejectFrame("illegal frame " + frameType + " when decoding address...");
                             }
                         } else if (rxread == 3) {
                             // save data sequence number
@@ -1012,6 +1012,9 @@ public class CC2520 extends Radio802154 implements USARTListener, SPIData {
                         } else if (decodeAddress) {
                             boolean flushPacket = false;
                             /* here we decode the address !!! */
+                            // BC_ADDRESS       = array
+                            // RAM_PANID        = offset 
+                            // RAM_SHORTADDR    = offset 
                             if (destinationAddressMode == LONG_ADDRESS && rxread == 8 + 5) {
                                 /* here we need to check that this address is correct compared to the stored address */
                                 flushPacket = !rxFIFO.tailEquals(memory, RAM_IEEEADDR, 8);

@@ -717,7 +717,7 @@ public class Timer extends IOUnit {
           reg.triggerInterrupt(cpu.cycles);
       }
       else if ((data & CC_IFG) != 0) {
-          if (DEBUG | true) log("no softwareTrigger as no edge was detected on CC_IFG ");
+          if (DEBUG | false) log("no softwareTrigger as no edge was detected on CC_IFG ");
       }
       updateCounter(cycles);
       
